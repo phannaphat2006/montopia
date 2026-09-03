@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MONSTOPIA | Full-Stack IT & Software Solutions</title>
+  <meta name="description" content="MONSTOPIA รับออกแบบและพัฒนา Web Application, Mobile Application, Cloud Infrastructure และ Web3 สำหรับธุรกิจไทย ตั้งแต่สำรวจความต้องการจนถึงดูแลหลังส่งมอบ">
+  <meta name="theme-color" content="#0b1020">
+  <meta property="og:title" content="MONSTOPIA | Technology built around your business">
+  <meta property="og:description" content="พัฒนาซอฟต์แวร์องค์กรแบบครบวงจร ตั้งแต่แนวคิด สถาปัตยกรรม ไปจนถึงการดูแลระบบจริง">
+  
+  <!-- ฟอนต์ภาษาไทยและอังกฤษ -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome สำหรับไอคอน -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ==============================================
+       1. หน้าจอล็อกอินก่อนเข้าใช้งาน (First-Screen Gatekeeper)
+       ============================================== -->
+  <div id="loginScreen" class="login-screen-overlay" hidden aria-hidden="true">
+    <div class="login-box-card">
+      <div class="login-mascot-box">
+        <canvas id="loginCanvas" width="140" height="140"></canvas>
+      </div>
+      <span class="login-brand-title">MONSTOPIA</span>
+      <p class="login-subtitle">ระบบบริหารจัดการข้อมูลบริการสำหรับองค์กร</p>
+
+      <form id="gateLoginForm" class="gate-login-form">
+        <div class="form-group text-left">
+          <label for="gateUser"><i class="fa-solid fa-user"></i> ชื่อผู้ใช้หรืออีเมล *</label>
+          <input type="text" id="gateUser" placeholder="admin@monstopia.co.th" required>
+        </div>
+
+        <div class="form-group text-left">
+          <label for="gatePass"><i class="fa-solid fa-lock"></i> รหัสผ่าน *</label>
+          <div class="password-field-wrapper">
+            <input type="password" id="gatePass" placeholder="••••••••" required>
+            <button type="button" class="toggle-pwd-btn" id="gateTogglePwd"><i class="fa-regular fa-eye"></i></button>
+          </div>
+        </div>
+
+        <div class="login-meta-row">
+          <label class="checkbox-container">
+            <input type="checkbox" checked> จดจำการเข้าสู่ระบบ
+          </label>
+          <span class="hint-text">บัญชีทดสอบ: <strong>admin1234</strong></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block login-btn-action" id="loginSubmitBtn">
+          <span>เข้าสู่เว็บไซต์</span> <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+        <div id="gateFeedback" class="gate-feedback"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==============================================
+       2. ส่วนของหน้าเว็บไซต์หลัก (จะแสดงเมื่อล็อกอินสำเร็จ)
+       ============================================== -->
+  <div id="mainWebsite" class="main-website-wrapper">
+    
+    <!-- Navbar -->
+    <header class="header">
+      <nav class="navbar">
+        <a href="#home" class="brand-logo">
+          <div class="nav-mascot-wrapper">
+            <canvas id="navCanvas" width="100" height="100"></canvas>
+          </div>
+          <span class="brand-name">MONSTOPIA</span>
+        </a>
+
+        <ul class="nav-links">
+          <li><a href="#about">เกี่ยวกับเรา</a></li>
+          <li><a href="#services">บริการ</a></li>
+          <li><a href="#projects">ผลงานเด่น</a></li>
+          <!-- ลิงก์ไปยังหน้าการดำเนินงานแยกต่างหาก -->
+          <li><a href="operations.html" class="nav-highlight"><i class="fa-solid fa-diagram-project text-red"></i> การดำเนินงาน</a></li>
+          <li><a href="#pricing">แพ็กเกจ</a></li>
+          <li><a href="#contact" class="nav-btn-contact">ติดต่อเรา</a></li>
+          <li class="demo-only" hidden>
+            <button class="nav-btn-logout" id="logoutBtn" title="ออกจากระบบ">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </button>
+          </li>
+        </ul>
+
+        <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- Hero Section -->
+      <section class="hero-section" id="home">
+        <div class="hero-container">
+          <div class="hero-content">
+            <div class="badge"><i class="fa-solid fa-bolt text-red"></i> Full-Stack IT & Software Solutions</div>
+            <h1 class="hero-title">
+              ขับเคลื่อนธุรกิจสู่อนาคตดิจิทัล ด้วยนวัตกรรมซอฟต์แวร์ระดับ <span class="text-red">Full-Stack</span>
+            </h1>
+            <p class="hero-desc">
+              บริษัท มอนส์โทเปีย จำกัด ผู้เชี่ยวชาญด้านการพัฒนา Web & Mobile Application, Cloud Infrastructure และนวัตกรรม Web3 / Blockchain เพื่อยกระดับองค์กรของคุณให้ก้าวล้ำ
+            </p>
+            <div class="hero-actions">
+              <a href="#contact" class="btn btn-primary">ปรึกษาโครงการฟรี <i class="fa-solid fa-arrow-right"></i></a>
+              <a href="operations.html" class="btn btn-secondary"><i class="fa-solid fa-bars-progress text-red"></i> ดูขั้นตอนการดำเนินงาน</a>
+            </div>
+            <div class="hero-proof" aria-label="จุดเด่นของบริการ">
+              <span><i class="fa-solid fa-check"></i> ประเมินความต้องการก่อนเริ่มงาน</span>
+              <span><i class="fa-solid fa-check"></i> ส่งมอบ Source code และเอกสารระบบ</span>
+              <span><i class="fa-solid fa-check"></i> ดูแลหลังเปิดใช้งาน</span>
+            </div>
+          </div>
+
+          <div class="hero-visual">
+            <div class="hero-mascot-box" id="heroMascotBox">
+              <canvas id="heroCanvas" class="hero-mascot-canvas"></canvas>
+              
+              <div class="hero-tech-tag tag-1"><i class="fa-solid fa-layer-group"></i> Web & Mobile</div>
+              <div class="hero-tech-tag tag-2"><i class="fa-solid fa-cubes"></i> Blockchain Ready</div>
+              <div class="hero-tech-tag tag-3"><i class="fa-solid fa-cloud"></i> Cloud Native</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tech Stack Showcase -->
+      <section class="tech-marquee-section" id="tech">
+        <div class="container">
+          <p class="tech-intro">ENTERPRISE TECH STACK & FRAMEWORKS</p>
+          <div class="tech-badges">
+            <div class="tech-badge"><i class="fa-brands fa-php"></i> PHP & Laravel</div>
+            <div class="tech-badge"><i class="fa-brands fa-js"></i> JavaScript / Node.js</div>
+            <div class="tech-badge"><i class="fa-solid fa-database"></i> MySQL / MariaDB</div>
+            <div class="tech-badge"><i class="fa-brands fa-bootstrap"></i> Bootstrap 5 & Tailwind</div>
+            <div class="tech-badge"><i class="fa-solid fa-link"></i> Bitkub Chain (Web3)</div>
+            <div class="tech-badge"><i class="fa-brands fa-aws"></i> AWS & Cloud Native</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- About Us -->
+      <section class="about-section" id="about">
+        <div class="container">
+          <div class="section-header">
+            <span class="sub-title">WHO WE ARE</span>
+            <h2>นวัตกรรมที่ออกแบบมาเพื่อความสำเร็จขององค์กร</h2>
+          </div>
+
+          <div class="about-grid">
+            <div class="about-text">
+              <p class="lead-text">
+                <strong>บริษัท มอนส์โทเปีย จำกัด (MONSTOPIA COMPANY LIMITED)</strong> มุ่งเน้นการส่งมอบโซลูชันด้านเทคโนโลยีสารสนเทศแบบครบวงจร
+              </p>
+              <p>
+                เราเชี่ยวชาญในการพัฒนาระบบที่มีความซับซ้อนสูง ตั้งแต่ Custom Software สำหรับธุรกิจ ไปจนถึงโครงสร้างพื้นฐานระดับ Cloud และการเชื่อมต่อบล็อกเชน (Web3 Integration) เพื่อช่วยให้องค์กรทุกขนาดสามารถทำ Digital Transformation ได้อย่างราบรื่นและปลอดภัย
+              </p>
+              <div class="stats-row">
+                <div class="stat-item">
+                  <span class="stat-num count-up" data-target="100">0</span><span class="stat-unit">%</span>
+                  <span class="stat-label">Custom Architecture</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-num count-up" data-target="99">0</span><span class="stat-unit">.9%</span>
+                  <span class="stat-label">System Uptime SLA</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-num count-up" data-target="24">0</span><span class="stat-unit">/7</span>
+                  <span class="stat-label">Technical Support</span>
+                </div>
+              </div>
+            </div>
+            <div class="about-cards-wrapper">
+              <div class="info-block">
+                <div class="block-icon"><i class="fa-solid fa-bullseye"></i></div>
+                <h3>วิสัยทัศน์องค์กร</h3>
+                <p>สร้างสรรค์ซอฟต์แวร์และโครงสร้างระบบที่ตอบโจทย์การขยายตัวทางธุรกิจอย่างไร้ขีดจำกัด</p>
+              </div>
+              <div class="info-block">
+                <div class="block-icon"><i class="fa-solid fa-handshake-simple"></i></div>
+                <h3>พันธมิตรที่ไว้วางใจได้</h3>
+                <p>ทำงานร่วมกับองค์กรชั้นนำและเครือข่ายเทคโนโลยีเพื่อส่งมอบมาตรฐานสูงสุด</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Services -->
+      <section class="services-section" id="services">
+        <div class="container">
+          <div class="section-header">
+            <span class="sub-title">OUR SERVICES</span>
+            <h2>3 เสาหลักบริการด้านซอฟต์แวร์และโครงสร้างไอที</h2>
+          </div>
+
+          <div class="services-layout">
+            <article class="service-item">
+              <div class="service-number">01</div>
+              <div class="service-content">
+                <h3>Web Application Development</h3>
+                <p class="service-lead">การพัฒนาเว็บแอปพลิเคชันและระบบบริหารจัดการภายในองค์กร</p>
+                <p>ออกแบบและพัฒนาระบบตามความต้องการเฉพาะของแต่ละธุรกิจ (Custom Software) เพื่อรองรับ Digital Transformation พร้อมระบบจัดการข้อมูลแบบ Real-time</p>
+                <ul class="feature-bullets">
+                  <li><i class="fa-solid fa-check text-red"></i> ระบบ ERP, CRM และระบบหลังบ้านองค์กร</li>
+                  <li><i class="fa-solid fa-check text-red"></i> พัฒนาด้วยสถาปัตยกรรม MVC และฐานข้อมูลความเร็วสูง</li>
+                  <li><i class="fa-solid fa-check text-red"></i> รองรับ Responsive ใช้งานได้ทุกอุปกรณ์</li>
+                </ul>
+              </div>
+            </article>
+
+            <article class="service-item">
+              <div class="service-number">02</div>
+              <div class="service-content">
+                <h3>Mobile Application Development</h3>
+                <p class="service-lead">การออกแบบและพัฒนาโมบายแอปพลิเคชันบน iOS และ Android</p>
+                <p>มุ่งเน้นการสร้างประสบการณ์ผู้ใช้ (UX/UI) ที่ลื่นไหล สะดวก รวดเร็ว และเชื่อมโยงกับฐานข้อมูลขององค์กรแบบไร้รอยต่อ</p>
+                <ul class="feature-bullets">
+                  <li><i class="fa-solid fa-check text-red"></i> พัฒนาแบบ Cross-Platform และ Native</li>
+                  <li><i class="fa-solid fa-check text-red"></i> ระบบแจ้งเตือน (Push Notifications) แบบทันที</li>
+                  <li><i class="fa-solid fa-check text-red"></i> ความปลอดภัยและการเข้ารหัสข้อมูลระดับสากล</li>
+                </ul>
+              </div>
+            </article>
+
+            <article class="service-item">
+              <div class="service-number">03</div>
+              <div class="service-content">
+                <h3>Cloud & Infrastructure Solutions</h3>
+                <p class="service-lead">บริการด้านโครงสร้างพื้นฐานและระบบคลาวด์ครบวงจร</p>
+                <p>ครอบคลุมการวางระบบเครือข่าย การบริหารจัดการเซิร์ฟเวอร์ และการย้ายฐานข้อมูลขึ้นสู่คลาวด์ รองรับการใช้งานพร้อมกันจำนวนมากได้อย่างมีเสถียรภาพ</p>
+                <ul class="feature-bullets">
+                  <li><i class="fa-solid fa-check text-red"></i> Cloud Migration & Server Management</li>
+                  <li><i class="fa-solid fa-check text-red"></i> High Availability & Auto-scaling</li>
+                  <li><i class="fa-solid fa-check text-red"></i> การสำรองข้อมูลและการรักษาความปลอดภัย</li>
+                </ul>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Featured Projects -->
+      <section class="projects-section" id="projects">
+        <div class="container">
+          <div class="section-header">
+            <span class="sub-title">PORTFOLIO & CASE STUDIES</span>
+            <h2>ผลงานและความเชี่ยวชาญระดับสูง</h2>
+          </div>
+
+          <div class="projects-grid">
+            <div class="project-showcase">
+              <div class="project-tag"><i class="fa-solid fa-link"></i> Web3 & Blockchain Integration</div>
+              <h3>Bullmoon Jr. x Bitkub</h3>
+              <p>
+                การพัฒนาระบบเชื่อมต่อกระเป๋าเงินดิจิทัล (Wallet Connection) บนเครือข่าย <strong>Bitkub Chain</strong> พร้อมระบบจัดการสินทรัพย์ดิจิทัลและสร้างโทเคน NFT ภายใต้บันทึกข้อตกลงความร่วมมือ (MOU) ร่วมกับ Bitkub Chain และ 2Morrow
+              </p>
+              <div class="tech-pills">
+                <span>Bitkub Chain</span>
+                <span>Web3 Wallet</span>
+                <span>NFT Smart Contract</span>
+              </div>
+            </div>
+
+            <div class="project-showcase">
+              <div class="project-tag"><i class="fa-solid fa-chart-line"></i> Enterprise System</div>
+              <h3>Corporate CRM & Data Automation</h3>
+              <p>
+                ระบบบริหารจัดการความสัมพันธ์ลูกค้าและข้อมูลการขายสำหรับองค์กรธุรกิจขนาดกลางถึงใหญ่ รวมศูนย์ข้อมูลลูกค้าและกระบวนการทำงานให้เป็นระบบอัตโนมัติ
+              </p>
+              <div class="tech-pills">
+                <span>PHP / MySQL</span>
+                <span>Real-time Analytics</span>
+                <span>Role-based Auth</span>
+              </div>
+            </div>
+
+            <div class="project-showcase">
+              <div class="project-tag"><i class="fa-solid fa-cart-shopping"></i> Full-Scale Commerce</div>
+              <h3>Omnichannel E-Commerce Platform</h3>
+              <p>
+                แพลตฟอร์มพาณิชย์อิเล็กทรอนิกส์พร้อมระบบชำระเงิน ตรวจสอบสต็อกสินค้าแบบเรียลไทม์ และระบบ Dashboard สรุปยอดขายสำหรับผู้บริหาร
+              </p>
+              <div class="tech-pills">
+                <span>Payment Gateway</span>
+                <span>Inventory Sync</span>
+                <span>High Concurrency</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pricing Packages -->
+      <section class="pricing-section" id="pricing">
+        <div class="container">
+          <div class="section-header text-center">
+            <span class="sub-title">SERVICE PACKAGES</span>
+            <h2>แพ็กเกจบริการที่ออกแบบตามขนาดธุรกิจ</h2>
+          </div>
+
+          <div class="pricing-grid">
+            <div class="pricing-card">
+              <div class="card-head">
+                <h3>Starter Business</h3>
+                <p>เหมาะสำหรับธุรกิจเริ่มต้นหรือต้องการเว็บไซต์แนะนำองค์กร</p>
+              </div>
+              <ul class="pricing-features">
+                <li><i class="fa-solid fa-check text-red"></i> ออกแบบ Responsive เว็บไซต์ 1-5 หน้า</li>
+                <li><i class="fa-solid fa-check text-red"></i> ระบบจัดการเนื้อหาพื้นฐาน</li>
+                <li><i class="fa-solid fa-check text-red"></i> ติดตั้งระบบรักษาความปลอดภัย SSL</li>
+                <li><i class="fa-solid fa-check text-red"></i> ดูแลระบบ 3 เดือนหลังส่งมอบ</li>
+              </ul>
+              <a href="#contact" class="btn btn-outline">ติดต่อขอใบเสนอราคา</a>
+            </div>
+
+            <div class="pricing-card featured">
+              <div class="featured-badge">RECOMMENDED</div>
+              <div class="card-head">
+                <h3>Custom Enterprise</h3>
+                <p>สำหรับองค์กรที่ต้องการเว็บแอปพลิเคชันหรือระบบภายในเฉพาะทาง</p>
+              </div>
+              <ul class="pricing-features">
+                <li><i class="fa-solid fa-check text-red"></i> พัฒนา Custom Web/Mobile Application</li>
+                <li><i class="fa-solid fa-check text-red"></i> ระบบจัดการฐานข้อมูล CRUD แบบเต็มรูปแบบ</li>
+                <li><i class="fa-solid fa-check text-red"></i> เชื่อมต่อ API / Payment / ระบบภายนอก</li>
+                <li><i class="fa-solid fa-check text-red"></i> วางโครงสร้างบนระบบ Cloud ประสิทธิภาพสูง</li>
+                <li><i class="fa-solid fa-check text-red"></i> ดูแลและสำรองข้อมูลรายเดือน</li>
+              </ul>
+              <a href="#contact" class="btn btn-primary">เริ่มต้นปรึกษาโครงการ</a>
+            </div>
+
+            <div class="pricing-card">
+              <div class="card-head">
+                <h3>Web3 & Innovation</h3>
+                <p>สำหรับโครงการด้านเทคโนโลยีขั้นสูง บล็อกเชน และนวัตกรรม</p>
+              </div>
+              <ul class="pricing-features">
+                <li><i class="fa-solid fa-check text-red"></i> ระบบเชื่อมต่อ Web3 Wallet</li>
+                <li><i class="fa-solid fa-check text-red"></i> พัฒนาและตรวจสอบ Smart Contract</li>
+                <li><i class="fa-solid fa-check text-red"></i> ออกแบบ UI/UX ระดับ High-End</li>
+                <li><i class="fa-solid fa-check text-red"></i> บริการที่ปรึกษาด้านเทคนิคเฉพาะทาง</li>
+              </ul>
+              <a href="#contact" class="btn btn-outline">ติดต่อสอบถามเฉพาะด้าน</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact -->
+      <section class="contact-section" id="contact">
+        <div class="container">
+          <div class="contact-layout">
+            <div class="contact-info">
+              <span class="sub-title">CONTACT US</span>
+              <h2>เริ่มต้นสร้างโครงการของคุณไปกับ MONSTOPIA</h2>
+              <p>พร้อมให้คำปรึกษาและออกแบบสถาปัตยกรรมระบบที่ตอบโจทย์ความต้องการของธุรกิจคุณอย่างแท้จริง</p>
+
+              <div class="info-list">
+                <div class="info-item">
+                  <div class="info-icon"><i class="fa-solid fa-building"></i></div>
+                  <div>
+                    <strong>บริษัท มอนส์โทเปีย จำกัด</strong>
+                    <p>เลขที่ 1 อาคารพาร์ค สีลม ชั้น 30 ยูนิต 30.20 ถนนคอนแวนต์ แขวงสีลม เขตบางรัก กรุงเทพฯ 10500</p>
+                  </div>
+                </div>
+
+                <div class="info-item">
+                  <div class="info-icon"><i class="fa-solid fa-envelope"></i></div>
+                  <div>
+                    <strong>อีเมลติดต่อ</strong>
+                    <p><a href="mailto:contact@monstopia.co.th">contact@monstopia.co.th</a></p>
+                  </div>
+                </div>
+
+                <div class="info-item">
+                  <div class="info-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                  <div>
+                    <strong>ข้อมูลนิติบุคคล</strong>
+                    <p>เลขทะเบียนนิติบุคคล: 0135566029506 (ทุนจดทะเบียน 1,000,000 บาท)</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="contact-form-card">
+              <h3>ส่งข้อความถึงทีมงาน</h3>
+              <p class="form-sub">กรอกรายละเอียดเพื่อให้ทีมงานติดต่อกลับโดยเร็วที่สุด</p>
+              
+              <form id="contactForm" novalidate>
+                <div class="form-group">
+                  <label for="userName">ชื่อ - นามสกุล หรือชื่อบริษัท *</label>
+                  <input type="text" id="userName" name="name" placeholder="ระบุชื่อของคุณ" required>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="userEmail">อีเมลติดต่อ *</label>
+                    <input type="email" id="userEmail" name="email" placeholder="example@domain.com" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="userPhone">เบอร์โทรศัพท์</label>
+                    <input type="tel" id="userPhone" name="phone" placeholder="08x-xxx-xxxx">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="serviceType">บริการที่สนใจ</label>
+                  <select id="serviceType" name="service">
+                    <option value="web">Web Application Development</option>
+                    <option value="mobile">Mobile Application Development</option>
+                    <option value="cloud">Cloud & Infrastructure Solutions</option>
+                    <option value="web3">Web3 / Blockchain / NFT</option>
+                    <option value="other">ปรึกษาโครงการอื่นๆ</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="userMessage">รายละเอียดโครงการ *</label>
+                  <textarea id="userMessage" name="message" rows="4" placeholder="บอกเล่าความต้องการเบื้องต้นของคุณ..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                  <span>ส่งรายละเอียดทางอีเมล</span> <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </button>
+                <p class="form-privacy"><i class="fa-solid fa-lock"></i> ข้อมูลของคุณจะถูกใช้เพื่อติดต่อกลับเกี่ยวกับโครงการนี้เท่านั้น</p>
+                
+                <div id="formResponse" class="form-response"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container footer-content">
+        <div class="footer-brand">
+          <span class="footer-logo">MONSTOPIA</span>
+          <p>Technology built around your business.</p>
+        </div>
+        <div class="footer-copyright">
+          <p>&copy; 2026 MONSTOPIA COMPANY LIMITED. All Rights Reserved.</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
