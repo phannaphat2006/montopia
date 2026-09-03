@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const services = { web: "Web Application", mobile: "Mobile Application", cloud: "Cloud & Infrastructure", web3: "Web3 / Blockchain", other: "โครงการอื่น ๆ" };
     const service = services[data.get("service")] || "โครงการใหม่";
     const subject = encodeURIComponent(`ขอปรึกษาโครงการ: ${service}`);
-    const body = encodeURIComponent(`ชื่อ/บริษัท: ${data.get("name")}\nอีเมล: ${data.get("email")}\nโทรศัพท์: ${data.get("phone") || "-"}\nบริการ: ${service}\n\nรายละเอียดโครงการ:\n${data.get("message")}`);
+    const body = encodeURIComponent(`ชื่อ/บริษัท: ${data.get("name")}\nอีเมล: ${data.get("email")}\nโทรศัพท์: ${data.get("phone") || "-"}\nบริการ: ${service}\nงบประมาณ: ${data.get("budget")}\nต้องการเริ่ม: ${data.get("timeline")}\n\nรายละเอียดโครงการ:\n${data.get("message")}`);
     response.style.display = "block";
     response.textContent = "กำลังเปิดโปรแกรมอีเมลของคุณ…";
     window.location.href = `mailto:contact@monstopia.co.th?subject=${subject}&body=${body}`;
