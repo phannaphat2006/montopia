@@ -1,2 +1,6 @@
 .site-package-*/
 site-*.tar.gz
+node_modules/
+.env.local
+.env
+.pglite-test/
