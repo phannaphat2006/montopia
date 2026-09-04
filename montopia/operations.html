@@ -1,214 +1,41 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>กระบวนการดำเนินงานโครงการ | MONSTOPIA</title>
-  <meta name="description" content="ขั้นตอนการทำงานของ MONSTOPIA ตั้งแต่ค้นหาความต้องการ ออกแบบ พัฒนา ทดสอบ ส่งมอบ และดูแลระบบหลังเปิดใช้งาน">
-  <meta name="theme-color" content="#0b1020">
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ขั้นตอนการพัฒนาและส่งมอบระบบ | MONSTOPIA</title>
+<meta name="description" content="แนวทางการทำงานของ MONSTOPIA ตั้งแต่กำหนดความต้องการ ออกแบบ พัฒนา ทดสอบรับมอบ และวางแผนดูแลระบบ">
+<meta name="theme-color" content="#b8292f">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="th_TH">
+<meta property="og:title" content="ขั้นตอนการพัฒนาและส่งมอบระบบ | MONSTOPIA">
+<meta property="og:description" content="แนวทางการทำงานของ MONSTOPIA ตั้งแต่กำหนดความต้องการ ออกแบบ พัฒนา ทดสอบรับมอบ และวางแผนดูแลระบบ">
+<meta property="og:image" content="https://monstopia-th.phannaphat2006.chatgpt.site/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ขั้นตอนการพัฒนาและส่งมอบระบบ | MONSTOPIA">
+<meta name="twitter:description" content="แนวทางการทำงานของ MONSTOPIA ตั้งแต่กำหนดความต้องการ ออกแบบ พัฒนา ทดสอบรับมอบ และวางแผนดูแลระบบ">
+<meta name="twitter:image" content="https://monstopia-th.phannaphat2006.chatgpt.site/og.png">
+<link rel="icon" href="logo.jpg" type="image/jpeg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="app.js" defer></script>
 </head>
-<body class="operations-page-body">
-
-  <!-- Header & Navbar หน้า Operations -->
-  <header class="header">
-    <nav class="navbar">
-      <a href="index.html" class="brand-logo">
-        <div class="nav-mascot-wrapper">
-          <canvas id="navCanvas" width="100" height="100"></canvas>
-        </div>
-        <span class="brand-name">MONSTOPIA</span>
-      </a>
-
-      <ul class="nav-links">
-        <li><a href="index.html"><i class="fa-solid fa-arrow-left"></i> กลับสู่หน้าหลัก</a></li>
-        <li><a href="#workflow-flow">ผังการทำงาน (Flowchart)</a></li>
-        <li><a href="#gantt-schedule">กำหนดการดำเนินงาน</a></li>
-        <li><a href="#testing-method">การทดสอบระบบ</a></li>
-        <li><a href="index.html#contact" class="nav-btn-contact">ติดต่อเรา</a></li>
-      </ul>
-    </nav>
-  </header>
-
-  <main class="operations-main-content">
-    
-    <!-- Hero Banner สำหรับหน้าการดำเนินงาน -->
-    <section class="op-hero-banner">
-      <div class="container">
-        <span class="badge"><i class="fa-solid fa-diagram-project text-red"></i> PROJECT EXECUTION & SDLC</span>
-        <h1 class="op-title">กระบวนการดำเนินงานและสถาปัตยกรรมการพัฒนาระบบ</h1>
-        <p class="op-subtitle">
-          รายละเอียดขั้นตอนการศึกษา วิเคราะห์ ออกแบบ พัฒนา ทดสอบ และประเมินประสิทธิภาพเว็บไซต์บริหารจัดการข้อมูลบริการ สำหรับ บริษัท มอนส์โทเปีย จำกัด
-        </p>
-      </div>
-    </section>
-
-    <!-- ส่วนที่ 1: ผังขั้นตอนการดำเนินงาน (Flowchart) -->
-    <section class="op-section" id="workflow-flow">
-      <div class="container">
-        <div class="section-header">
-          <span class="sub-title">METHODOLOGY & FLOWCHART</span>
-          <h2>ผังขั้นตอนการจัดทำและพัฒนาระบบซอฟต์แวร์</h2>
-        </div>
-
-        <div class="flowchart-cards-grid">
-          <div class="flow-node-card">
-            <div class="node-badge">STEP 01</div>
-            <div class="node-icon"><i class="fa-solid fa-book-open-reader"></i></div>
-            <h3>ศึกษาค้นคว้าข้อมูล</h3>
-            <p>ศึกษาสภาพการดำเนินงาน ความต้องการของบริษัท มอนส์โทเปีย จำกัด วิเคราะห์สถาปัตยกรรม MVC และศึกษาทฤษฎีการจัดการฐานข้อมูล MySQL</p>
-          </div>
-
-          <div class="flow-node-card">
-            <div class="node-badge">STEP 02</div>
-            <div class="node-icon"><i class="fa-solid fa-pen-ruler"></i></div>
-            <h3>ออกแบบเว็บไซต์ (UI/UX)</h3>
-            <p>ออกแบบโครงสร้างเว็บไซต์ (Sitemap), Wireframe และฐานข้อมูลเชิงสัมพันธ์ (ER-Diagram) ให้รองรับการทำงานแบบ CRUD Real-time</p>
-          </div>
-
-          <div class="flow-node-card">
-            <div class="node-badge">STEP 03</div>
-            <div class="node-icon"><i class="fa-solid fa-code"></i></div>
-            <h3>เขียนโปรแกรมและพัฒนาระบบ</h3>
-            <p>พัฒนาด้วยภาษา PHP เชื่อมต่อฐานข้อมูล MySQL ใช้ HTML5, CSS3, JavaScript และ Bootstrap Framework ในการจัดทำส่วนติดต่อผู้ใช้</p>
-          </div>
-
-          <div class="flow-node-card highlight-node">
-            <div class="node-badge text-red">STEP 04</div>
-            <div class="node-icon"><i class="fa-solid fa-vial-circle-check"></i></div>
-            <h3>ทดลองและทดสอบระบบ</h3>
-            <p>ทดสอบการทำงานของระบบ (หากไม่ผ่านเกณฑ์จะส่งกลับไปปรับปรุงแก้ไขโค้ด) เพื่อให้มั่นใจในความถูกต้องและความปลอดภัย</p>
-          </div>
-
-          <div class="flow-node-card">
-            <div class="node-badge">STEP 05</div>
-            <div class="node-icon"><i class="fa-solid fa-chart-pie"></i></div>
-            <h3>ประเมินประสิทธิภาพ & จัดทำเอกสาร</h3>
-            <p>ประเมินความพึงพอใจด้วยมาตราส่วน Likert Scale 5 ระดับจากบุคลากรบริษัท 10 คน และผู้ใช้งาน 15 คน พร้อมจัดทำรายงานปริญญานิพนธ์</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ส่วนที่ 2: ตารางกำหนดการดำเนินงาน (Gantt Schedule) -->
-    <section class="op-section alt-bg" id="gantt-schedule">
-      <div class="container">
-        <div class="section-header">
-          <span class="sub-title">PROJECT TIMELINE</span>
-          <h2>ตารางเวลาการดำเนินงานตามแผนงาน</h2>
-        </div>
-
-        <div class="schedule-table-wrapper">
-          <table class="styled-timeline-table">
-            <thead>
-              <tr>
-                <th>กิจกรรม / ขั้นตอนการดำเนินงาน</th>
-                <th>ระยะเวลาดำเนินการ</th>
-                <th>สถานะปัจจุบัน</th>
-                <th>ความคืบหน้า</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>1. ศึกษาค้นคว้าข้อมูลและรวบรวม Requirement</strong></td>
-                <td>มิ.ย. - ก.ค.</td>
-                <td><span class="badge-status-done"><i class="fa-solid fa-circle-check"></i> เสร็จสมบูรณ์</span></td>
-                <td><div class="table-progress"><div class="bar" style="width: 100%;"></div></div></td>
-              </tr>
-              <tr>
-                <td><strong>2. วิเคราะห์และออกแบบเว็บไซต์ (System & UI Design)</strong></td>
-                <td>ก.ค. - ส.ค.</td>
-                <td><span class="badge-status-done"><i class="fa-solid fa-circle-check"></i> เสร็จสมบูรณ์</span></td>
-                <td><div class="table-progress"><div class="bar" style="width: 100%;"></div></div></td>
-              </tr>
-              <tr>
-                <td><strong>3. พัฒนาเว็บไซต์และระบบบริหารจัดการข้อมูล (CRUD)</strong></td>
-                <td>ส.ค. - พ.ย.</td>
-                <td><span class="badge-status-done"><i class="fa-solid fa-circle-check"></i> เสร็จสมบูรณ์</span></td>
-                <td><div class="table-progress"><div class="bar" style="width: 100%;"></div></div></td>
-              </tr>
-              <tr class="row-current">
-                <td><strong>4. ทดลองเว็บไซต์และปรับปรุงแก้ไข (Black Box Testing)</strong></td>
-                <td>พ.ย. - ธ.ค.</td>
-                <td><span class="badge-status-active"><i class="fa-solid fa-spinner fa-spin"></i> กำลังดำเนินการ</span></td>
-                <td><div class="table-progress"><div class="bar" style="width: 75%;"></div></div></td>
-              </tr>
-              <tr>
-                <td><strong>5. ประเมินประสิทธิภาพและความพึงพอใจของผู้ใช้งาน</strong></td>
-                <td>ม.ค. - ก.พ.</td>
-                <td><span class="badge-status-pending"><i class="fa-regular fa-clock"></i> รอการประเมิน</span></td>
-                <td><div class="table-progress"><div class="bar" style="width: 0%;"></div></div></td>
-              </tr>
-              <tr>
-                <td><strong>6. สรุปผลการดำเนินงานและจัดทำเอกสารปริญญานิพนธ์</strong></td>
-                <td>ก.พ. - มี.ค.</td>
-                <td><span class="badge-status-pending"><i class="fa-regular fa-clock"></i> รอการประเมิน</span></td>
-                <td><div class="table-progress"><div class="bar" style="width: 0%;"></div></div></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ส่วนที่ 3: มาตรฐานการทดสอบระบบ (Testing & Quality) -->
-    <section class="op-section" id="testing-method">
-      <div class="container">
-        <div class="section-header">
-          <span class="sub-title">QUALITY ASSURANCE</span>
-          <h2>เกณฑ์การทดสอบระบบแบบ Black Box Testing</h2>
-        </div>
-
-        <div class="testing-grid">
-          <div class="test-item-card">
-            <div class="test-header">
-              <span class="test-tag">CRUD Test</span>
-              <h4>การจัดการข้อมูลบริการและราคา</h4>
-            </div>
-            <p>ตรวจสอบความถูกต้องของฟังก์ชัน Create, Read, Update, Delete ผ่านส่วนติดต่อผู้ใช้โดยไม่ต้องแก้ไขโค้ดของระบบ</p>
-            <div class="test-result pass"><i class="fa-solid fa-check"></i> ผลการทดสอบ: ผ่านเกณฑ์</div>
-          </div>
-
-          <div class="test-item-card">
-            <div class="test-header">
-              <span class="test-tag">Security Test</span>
-              <h4>ระบบยืนยันตัวตนผู้ดูแลระบบ</h4>
-            </div>
-            <p>ทดสอบการเข้าสู่ระบบ (Authentication) ของ Admin และการป้องกันการเข้าถึงฟังก์ชันจัดการข้อมูลโดยไม่ได้รับอนุญาต</p>
-            <div class="test-result pass"><i class="fa-solid fa-check"></i> ผลการทดสอบ: ผ่านเกณฑ์</div>
-          </div>
-
-          <div class="test-item-card">
-            <div class="test-header">
-              <span class="test-tag">Interactive Test</span>
-              <h4>การส่งข้อความติดต่อและแบบฟอร์ม</h4>
-            </div>
-            <p>ตรวจสอบความถูกต้องของการกรอกข้อมูล (Validation) และการบันทึกข้อความจากลูกค้าเข้าสู่ฐานข้อมูล</p>
-            <div class="test-result in-test"><i class="fa-solid fa-spinner fa-spin"></i> อยู่ระหว่างทดสอบรอบสุดท้าย</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <footer class="footer">
-    <div class="container footer-content">
-      <div class="footer-brand">
-        <span class="footer-logo">MONSTOPIA</span>
-        <p>Enterprise Operations & Software Development Management</p>
-      </div>
-      <div class="footer-copyright">
-        <p>&copy; 2026 MONSTOPIA COMPANY LIMITED. All Rights Reserved.</p>
-      </div>
-    </div>
-  </footer>
-
-  <script src="app.js"></script>
-</body>
-</html>
+<body><a class="skip-link" href="#main">ข้ามไปเนื้อหาหลัก</a>
+<div class="topbar"><div class="container"><span>บริษัท มอนส์โทเปีย จำกัด</span><a href="mailto:contact@monstopia.co.th">contact@monstopia.co.th <span aria-hidden="true">↗</span></a></div></div>
+<header class="header"><nav class="container navbar" aria-label="เมนูหลัก">
+<a class="brand" href="index.html" aria-label="MONSTOPIA หน้าหลัก"><img src="logo.jpg" width="58" height="44" alt=""><span>MONSTOPIA<small>SOFTWARE DEVELOPMENT</small></span></a>
+<button class="mobile-toggle" id="mobileToggle" type="button" aria-expanded="false" aria-controls="mainNav">เมนู <span aria-hidden="true">☰</span></button>
+<div class="nav-links" id="mainNav">
+<a href="index.html#services">บริการของเรา</a><a href="index.html#projects">ผลงาน</a><a href="operations.html">ขั้นตอนการทำงาน</a><a href="index.html#about">เกี่ยวกับบริษัท</a><a class="nav-contact" href="index.html#contact">ปรึกษาโครงการ <span aria-hidden="true">↗</span></a>
+</div></nav></header><main id="main"><section class="page-heading"><div class="container"><p class="breadcrumbs"><a href="index.html">หน้าหลัก</a> / ขั้นตอนการทำงาน</p><p class="eyebrow">OUR DELIVERY PROCESS</p><h1>เห็นภาพการทำงานร่วมกัน<br>ตั้งแต่ก่อนเริ่มพัฒนา</h1><p class="intro">แต่ละโครงการมีความซับซ้อนต่างกัน ขั้นตอนด้านล่างเป็นกรอบสำหรับวางแผนร่วมกัน ส่วนระยะเวลา สิ่งที่ส่งมอบ และเงื่อนไขการดูแลจะระบุในข้อเสนอของโครงการ</p></div></section>
+<section class="section" id="workflow-flow"><div class="container delivery-layout"><aside class="delivery-aside"><p class="eyebrow">FROM BRIEF TO DELIVERY</p><h2>คุยให้ชัด<br>ตรวจงานเป็นระยะ</h2><p>ไม่จำเป็นต้องรู้รายละเอียดทางเทคนิคทั้งหมด เพียงบอกเราเกี่ยวกับงานเดิมและสิ่งที่อยากปรับปรุง</p><a class="btn btn-primary" href="index.html#contact">เริ่มปรึกษาโครงการ ↗</a></aside><ol class="delivery-steps">
+<li><span>01</span><div><h2>สำรวจความต้องการ</h2><p>พูดคุยกับผู้เกี่ยวข้องเพื่อเข้าใจวิธีทำงานเดิม ผู้ใช้งาน และปัญหาที่ต้องแก้ แยกสิ่งที่จำเป็นในระยะแรกออกจากสิ่งที่สามารถต่อยอดภายหลัง</p><div class="deliverable"><strong>สิ่งที่ควรได้จากขั้นตอนนี้</strong>รายการความต้องการ ขอบเขตเบื้องต้น และประเด็นที่ต้องตรวจสอบเพิ่มเติม</div></div></li>
+<li><span>02</span><div><h2>ออกแบบและตกลงขอบเขตงาน</h2><p>จัดทำแนวทางการใช้งาน หน้าจอที่จำเป็น และการเชื่อมข้อมูล พร้อมประเมินแผนงาน ค่าใช้จ่าย และความรับผิดชอบของแต่ละฝ่าย</p><div class="deliverable"><strong>สิ่งที่ควรตกลงให้ชัด</strong>ขอบเขตงาน เกณฑ์รับมอบ งวดส่งมอบ สิทธิ์ในผลงาน และวิธีจัดการคำขอเปลี่ยนแปลง</div></div></li>
+<li><span>03</span><div><h2>พัฒนาและตรวจงานเป็นรอบ</h2><p>พัฒนาตามแผนที่ตกลง นำเสนอส่วนงานที่พร้อมตรวจ และเก็บข้อเสนอแนะ เมื่อมีความต้องการเพิ่มเติมให้ประเมินผลต่อเวลาและงบประมาณก่อนดำเนินการ</p><div class="deliverable"><strong>สิ่งที่ใช้ติดตามร่วมกัน</strong>รายการงาน สถานะการพัฒนา ผลการตรวจ และบันทึกประเด็นที่ต้องแก้ไข</div></div></li>
+<li><span>04</span><div><h2>ทดสอบรับมอบกับผู้ใช้งาน</h2><p>ตรวจสอบสถานการณ์การใช้งานตามขอบเขต ทดสอบสิทธิ์และความถูกต้องของข้อมูล รวมถึงข้อผิดพลาดที่อาจพบ ก่อนลงนามรับมอบแต่ละส่วนงาน</p><div class="deliverable"><strong>หลักฐานสำหรับการรับมอบ</strong>รายการทดสอบ ผลการทดสอบ ข้อจำกัดที่ทราบ และรายการแก้ไขตามเกณฑ์ที่ตกลง</div></div></li>
+<li><span>05</span><div><h2>เปิดใช้งานและส่งต่อการดูแล</h2><p>เตรียมสภาพแวดล้อม ข้อมูล และสิทธิ์การเข้าถึง พร้อมส่งต่อคู่มือหรืออธิบายวิธีใช้งาน ขอบเขตการดูแลหลังส่งมอบให้เป็นไปตามข้อตกลงของโครงการ</p><div class="deliverable"><strong>รายการที่ควรส่งต่อ</strong>เอกสารที่ตกลงไว้ บัญชีผู้ดูแล สิทธิ์ใน Source code และช่องทางแจ้งปัญหา</div></div></li>
+</ol></div></section>
+<section class="section projects-section" id="gantt-schedule"><div class="container"><div class="section-heading"><div><p class="eyebrow">PROJECT RESPONSIBILITIES</p><h2>เตรียมข้อมูลให้พร้อม<br>เพื่อให้งานเดินหน้าได้</h2></div><p>ระยะเวลาขึ้นอยู่กับจำนวนฟังก์ชัน การเชื่อมต่อ การย้ายข้อมูล และรอบอนุมัติงานของแต่ละองค์กร</p></div><div class="table-wrap"><table><caption class="eyebrow">ตัวอย่างสิ่งที่ต้องเตรียมและตกลงร่วมกัน</caption><thead><tr><th scope="col">ช่วงงาน</th><th scope="col">ข้อมูลจากฝั่งลูกค้า</th><th scope="col">สิ่งที่ใช้ตัดสินใจร่วมกัน</th></tr></thead><tbody><tr><th scope="row">วางแผน</th><td>เป้าหมาย ผู้ใช้งาน ตัวอย่างเอกสารและขั้นตอนเดิม</td><td>ขอบเขตและลำดับความสำคัญ</td></tr><tr><th scope="row">ออกแบบ</th><td>ผู้อนุมัติหน้าจอ กติกาทางธุรกิจ ข้อมูลที่ต้องเชื่อม</td><td>แนวทางระบบและแบบหน้าจอ</td></tr><tr><th scope="row">ทดสอบ</th><td>ผู้ทดสอบและชุดข้อมูลที่เหมาะสม</td><td>ผลการทดสอบและเกณฑ์รับมอบ</td></tr><tr><th scope="row">เปิดใช้งาน</th><td>ผู้ดูแลระบบและช่วงเวลาที่พร้อมเปลี่ยนผ่าน</td><td>แผนเปิดใช้งานและแนวทางดูแลต่อ</td></tr></tbody></table></div></div></section>
+<section class="section" id="testing-method"><div class="container faq-layout"><div><p class="eyebrow">QUALITY & HANDOVER</p><h2>สิ่งที่ควรตรวจ<br>ก่อนเริ่มใช้งาน</h2></div><div class="faq-list"><details open><summary>การทำงานตรงกับขอบเขตที่ตกลง</summary><p>ตรวจตามสถานการณ์จริงของแต่ละบทบาท ทั้งขั้นตอนปกติและกรณีข้อมูลไม่ครบหรือไม่ถูกต้อง</p></details><details><summary>ข้อมูลและสิทธิ์การเข้าถึง</summary><p>ตรวจว่าผู้ใช้เข้าถึงได้เฉพาะข้อมูลที่ได้รับอนุญาต และตรวจความถูกต้องของข้อมูลสำคัญหลังนำเข้าหรือย้ายระบบ</p></details><details><summary>ความพร้อมในการดูแลต่อ</summary><p>ตรวจรายการเอกสาร สิทธิ์ผู้ดูแล การสำรองข้อมูล และช่องทางแจ้งปัญหาตามขอบเขตที่ตกลงไว้</p></details></div></div><div class="container operations-cta"><h3>เริ่มจากโจทย์ของคุณ แล้ววางแผนไปด้วยกัน</h3><a href="index.html#contact" class="btn btn-primary">ส่งรายละเอียดโครงการ ↗</a></div></section></main><footer class="footer"><div class="container footer-grid"><div><a class="footer-brand" href="index.html">MONSTOPIA<span>.</span></a><p>บริษัท มอนส์โทเปีย จำกัด<br>พัฒนาซอฟต์แวร์และระบบสำหรับธุรกิจ</p></div><div><h3>รู้จักเรา</h3><a href="index.html#services">บริการของเรา</a><a href="index.html#projects">ผลงานและความร่วมมือ</a><a href="operations.html">ขั้นตอนการทำงาน</a></div><div><h3>เริ่มต้นพูดคุย</h3><a href="mailto:contact@monstopia.co.th">contact@monstopia.co.th</a><p>Park Silom, กรุงเทพมหานคร</p><a href="index.html#contact">ส่งรายละเอียดโครงการ <span aria-hidden="true">↗</span></a></div></div><div class="container footer-bottom"><span>© 2026 MONSTOPIA COMPANY LIMITED</span><span>Web · Mobile · Cloud · Web3</span></div></footer></body></html>

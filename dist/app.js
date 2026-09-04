@@ -1,64 +1,104 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const toggle = document.getElementById("mobileToggle");
-  const nav = document.querySelector(".nav-links");
-  if (toggle && nav) {
-    toggle.setAttribute("aria-expanded", "false");
-    toggle.addEventListener("click", () => {
-      const open = nav.classList.toggle("active");
-      toggle.setAttribute("aria-expanded", String(open));
-      toggle.innerHTML = `<i class="fa-solid fa-${open ? "xmark" : "bars"}"></i>`;
-    });
-    nav.querySelectorAll("a").forEach(link => link.addEventListener("click", () => {
-      nav.classList.remove("active");
-      toggle.setAttribute("aria-expanded", "false");
-      toggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
-    }));
+  const menuButton = document.getElementById("mobileToggle");
+  const menu = document.getElementById("mainNav");
+  function closeMenu() {
+    if (!menuButton || !menu) return;
+    menu.classList.remove("is-open");
+    menuButton.setAttribute("aria-expanded", "false");
   }
-
-  const canvases = ["heroCanvas", "navCanvas"].map(id => document.getElementById(id)).filter(Boolean);
-  const image = new Image();
-  image.src = "logo.jpg";
-  image.onload = () => canvases.forEach(canvas => {
-    canvas.width = image.width;
-    canvas.height = image.height;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(image, 0, 0);
-    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < pixels.data.length; i += 4) {
-      const light = (pixels.data[i] + pixels.data[i + 1] + pixels.data[i + 2]) / 3;
-      if (light > 210) pixels.data[i + 3] = 0;
-      else [pixels.data[i], pixels.data[i + 1], pixels.data[i + 2]] = [255, 59, 48];
+  menuButton?.addEventListener("click", () => {
+    const open = menu.classList.toggle("is-open");
+    menuButton.setAttribute("aria-expanded", String(open));
+  });
+  menu?.querySelectorAll("a").forEach(link => link.addEventListener("click", closeMenu));
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && menu?.classList.contains("is-open")) {
+      closeMenu();
+      menuButton.focus();
     }
-    ctx.putImageData(pixels, 0, 0);
+  });
+  document.addEventListener("click", event => {
+    if (!event.target.closest(".navbar")) closeMenu();
+  });
+  window.matchMedia("(min-width: 901px)").addEventListener("change", closeMenu);
+
+  const tabs = [...document.querySelectorAll("[data-service]")];
+  function chooseService(key, focus = false) {
+    tabs.forEach(tab => {
+      const active = tab.dataset.service === key;
+      tab.setAttribute("aria-selected", String(active));
+      tab.tabIndex = active ? 0 : -1;
+      document.getElementById(tab.getAttribute("aria-controls")).hidden = !active;
+      if (active && focus) tab.focus();
+    });
+  }
+  tabs.forEach((tab, index) => {
+    tab.addEventListener("click", () => chooseService(tab.dataset.service));
+    tab.addEventListener("keydown", event => {
+      let next;
+      if (["ArrowRight", "ArrowDown"].includes(event.key)) next = (index + 1) % tabs.length;
+      if (["ArrowLeft", "ArrowUp"].includes(event.key)) next = (index - 1 + tabs.length) % tabs.length;
+      if (event.key === "Home") next = 0;
+      if (event.key === "End") next = tabs.length - 1;
+      if (next !== undefined) {
+        event.preventDefault();
+        chooseService(tabs[next].dataset.service, true);
+      }
+    });
+  });
+  document.querySelectorAll("[data-service-link]").forEach(link => {
+    link.addEventListener("click", () => chooseService(link.dataset.serviceLink));
+  });
+  const serviceInput = document.getElementById("serviceType");
+  document.querySelectorAll("[data-brief-service]").forEach(link => {
+    link.addEventListener("click", () => {
+      if (serviceInput) {
+        serviceInput.value = link.dataset.briefService;
+        serviceInput.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
   });
 
-  const counterObserver = new IntersectionObserver((entries, observer) => entries.forEach(entry => {
-    if (!entry.isIntersecting) return;
-    const counter = entry.target;
-    const target = Number(counter.dataset.target || 0);
-    const start = performance.now();
-    const draw = now => {
-      const progress = Math.min((now - start) / 900, 1);
-      counter.textContent = Math.round(target * (1 - Math.pow(1 - progress, 3)));
-      if (progress < 1) requestAnimationFrame(draw);
-    };
-    requestAnimationFrame(draw);
-    observer.unobserve(counter);
-  }), { threshold: .5 });
-  document.querySelectorAll(".count-up").forEach(counter => counterObserver.observe(counter));
-
   const form = document.getElementById("contactForm");
-  const response = document.getElementById("formResponse");
-  if (form && response) form.addEventListener("submit", event => {
+  const review = document.getElementById("formResponse");
+  const preview = document.getElementById("briefPreview");
+  const draftLink = document.getElementById("emailDraft");
+  const status = document.getElementById("copyStatus");
+  const services = { web: "Web Application / ระบบองค์กร", mobile: "Mobile Application", cloud: "Cloud & Infrastructure", web3: "Web3 / NFT", other: "ต้องการคำแนะนำ" };
+  form?.addEventListener("submit", event => {
     event.preventDefault();
-    if (!form.checkValidity()) return form.reportValidity();
+    ["userName", "userMessage"].forEach(id => {
+      const field = document.getElementById(id);
+      field.value = field.value.trim();
+    });
+    if (!form.reportValidity()) return;
     const data = new FormData(form);
-    const services = { web: "Web Application", mobile: "Mobile Application", cloud: "Cloud & Infrastructure", web3: "Web3 / Blockchain", other: "โครงการอื่น ๆ" };
-    const service = services[data.get("service")] || "โครงการใหม่";
-    const subject = encodeURIComponent(`ขอปรึกษาโครงการ: ${service}`);
-    const body = encodeURIComponent(`ชื่อ/บริษัท: ${data.get("name")}\nอีเมล: ${data.get("email")}\nโทรศัพท์: ${data.get("phone") || "-"}\nบริการ: ${service}\nงบประมาณ: ${data.get("budget")}\nต้องการเริ่ม: ${data.get("timeline")}\n\nรายละเอียดโครงการ:\n${data.get("message")}`);
-    response.style.display = "block";
-    response.textContent = "กำลังเปิดโปรแกรมอีเมลของคุณ…";
-    window.location.href = `mailto:contact@monstopia.co.th?subject=${subject}&body=${body}`;
+    const read = key => String(data.get(key) || "-").trim();
+    const service = services[read("service")] || services.other;
+    const message = [
+      "เรียน ทีม MONSTOPIA", "", "สนใจปรึกษาโครงการ โดยมีรายละเอียดดังนี้", "",
+      "ชื่อ: " + read("name"), "บริษัท: " + read("company"),
+      "อีเมล: " + read("email"), "โทรศัพท์: " + read("phone"),
+      "บริการ: " + service, "งบประมาณ: " + read("budget"),
+      "ช่วงเวลาที่ต้องการเริ่ม: " + read("timeline"), "", "รายละเอียดโครงการ:", read("message")
+    ].join("\n");
+    preview.value = message;
+    draftLink.href = "mailto:contact@monstopia.co.th?subject=" + encodeURIComponent("ปรึกษาโครงการ — " + service) + "&body=" + encodeURIComponent(message);
+    review.hidden = false;
+    status.textContent = "";
+    review.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
+    preview.focus({ preventScroll: true });
+  });
+  form?.addEventListener("input", () => { review.hidden = true; });
+  form?.addEventListener("change", () => { review.hidden = true; });
+  document.getElementById("copyBrief")?.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(preview.value);
+      status.textContent = "คัดลอกแล้ว ส่งข้อความนี้ไปที่ contact@monstopia.co.th ได้เลย";
+    } catch {
+      preview.focus();
+      preview.select();
+      status.textContent = "เลือกข้อความให้แล้ว กรุณากด Ctrl+C หรือคัดลอกจากเมนูของอุปกรณ์";
+    }
   });
 });
