@@ -1,36 +1,27 @@
-# MONSTOPIA website content
+# MONSTOPIA content and asset sources
 
 ## Design reference
 
-https://www.orange-thailand.com/programming/
-
-Used for high-level service navigation and information hierarchy. No copy, client logos, testimonials, code, or images copied from the reference site.
+The information hierarchy was informed by <https://www.orange-thailand.com/programming/>. No source code, copy, customer logos, testimonials, or images were copied from the reference.
 
 ## Verified collaboration
 
-https://www.tnnthailand.com/tech/200717/
+TNN reported the BullMoonJR collaboration between MONSTOPIA, StockTomorrow, and Bitkub Blockchain Technology on 27 May 2025:
 
-TNN reports a 27 May 2025 BullMoonJR collaboration between Monstopia, StockTomorrow and Bitkub Blockchain Technology. The website summarizes the documented role without claiming unverified engineering responsibilities or business results.
+- Article: <https://www.tnnthailand.com/tech/200717/>
+- `public/bullmoon-launch.webp`: <https://www.tnnthailand.com/static/2025/7ef7b3cd-2665-4af1-bd7a-79d3762624e7.webp>
+- `public/bullmoon-event.webp`: <https://www.tnnthailand.com/static/2025/4e2e6fee-e4e4-4e0a-9858-bf8aca0e4758.webp>
 
-Images credited by TNN to Bitkub:
+The images are credited on the page. These source credits do not establish a reuse licence; confirm company or publisher permission before a public launch.
 
-- bullmoon-launch.webp: https://www.tnnthailand.com/static/2025/7ef7b3cd-2665-4af1-bd7a-79d3762624e7.webp
-- bullmoon-event.webp: https://www.tnnthailand.com/static/2025/4e2e6fee-e4e4-4e0a-9858-bf8aca0e4758.webp
+## Removed concept assets
 
-These source credits do not establish a reuse license. Confirm company permission for public promotional use before changing the current private site to public access.
+All AI-generated concept/project images and the AI-generated social card were removed. The site now uses either the real company logo or documentary event images from the source above. Portfolio records accept real product screenshots through `image_url`.
 
-## Illustrative assets
+## Company information to confirm before launch
 
-project-showcase-v2.png is an existing AI-generated concept image. CRM and commerce examples are explicitly labeled as concepts, not delivered client projects.
+The address, registration number, and `contact@monstopia.co.th` were supplied by the existing website and have not been independently confirmed. No invented uptime, response-time, customer-count, or delivery metrics are presented.
 
-og.png is a new built-in ImageGen typographic social card. Prompt: restrained MONSTOPIA corporate software consultancy card; warm off-white background, charcoal typography, short deep-red rule; exact text MONSTOPIA and Software for your business.; no people, claims, UI, illustrations, gradients, or glows.
+## Application behaviour
 
-## Company information to confirm before public launch
-
-The address, registration number and contact@monstopia.co.th are preserved from the supplied website, not independently confirmed. No phone number, client testimonial, response-time promise, uptime guarantee or invented delivery metric is added.
-
-The enquiry form prepares an email draft and supports copying. It does not send or save enquiries to a backend.
-
-## Local build and verification
-
-Run `node tests/site.test.cjs`, then `node build.cjs`. No dependency installation is required. Source pages live in montopia; dist is the static deployment output.
+The enquiry forms send JSON to Laravel and persist records in MySQL. They do not create email drafts or copy data to the clipboard. The Client Workspace is session-authenticated and obtains project data from server-side ownership checks.

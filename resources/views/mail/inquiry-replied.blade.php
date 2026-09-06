@@ -1,0 +1,1 @@
+<!doctype html><html lang="th"><body style="font-family:sans-serif;color:#182126"><h2>อัปเดตจากทีม MONSTOPIA</h2><p>เรียน {{ $inquiry->client_name }}</p><p style="white-space:pre-line">{{ $reply->reply_message }}</p><p>สถานะรายการ: {{ $inquiry->status }}</p><hr><small>อีเมลนี้เกี่ยวข้องกับบรีฟหมายเลข #{{ $inquiry->id }}</small></body></html>
