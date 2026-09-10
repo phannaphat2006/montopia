@@ -78,6 +78,17 @@
     color: var(--red);
 }
 
+.metric-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.metric-action .icon-next {
+    width: 12px;
+    height: 12px;
+}
+
 .dashboard-columns {
     margin-top: 4px;
 }

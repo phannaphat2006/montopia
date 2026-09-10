@@ -61,6 +61,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return (await response.json()).data;
     }
 
+    function arrowLink(link, text) {
+        const icon = document.createElement('span');
+        icon.className = 'icon-arrow';
+        icon.ariaHidden = 'true';
+        link.replaceChildren(document.createTextNode(text), icon);
+        return link;
+    }
+
     async function loadCompany() {
         try {
             const company = await fetchData('/api/company');
@@ -94,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const title = document.createElement('h3'); title.textContent = item.short_description;
                 heading.append(label, title);
                 const description = document.createElement('p'); description.textContent = item.description;
-                const link = document.createElement('a'); link.href = '#contact'; link.className = 'text-link'; link.textContent = 'ปรึกษาบริการนี้ ↗';
+                const link = document.createElement('a'); link.href = '#contact'; link.className = 'text-link'; arrowLink(link, 'ปรึกษาบริการนี้');
                 link.addEventListener('click', () => { if (serviceInput) serviceInput.value = item.slug; });
                 panel.append(heading, description, link);
                 managedTabs.push(tab); managedPanels.push(panel); tabList.append(tab);
@@ -125,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const number = document.createElement('span'); number.textContent = String(index + 1).padStart(2, '0');
                     const title = document.createElement('strong'); title.textContent = item.title;
                     const summary = document.createElement('small'); summary.textContent = item.short_description;
-                    const arrow = document.createElement('b'); arrow.ariaHidden = 'true'; arrow.textContent = '↗';
+                    const arrow = document.createElement('b'); arrow.className = 'icon-arrow'; arrow.ariaHidden = 'true';
                     link.append(number, title, summary, arrow); link.addEventListener('click', () => chooseManagedService(item.slug)); return link;
                 }));
             }
@@ -154,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 String(item.features || '').split('\n').map(value => value.trim()).filter(Boolean).forEach(value => { const li = document.createElement('li'); li.textContent = value; features.append(li); });
                 const footer = document.createElement('div'); footer.className = 'package-footer';
                 const time = document.createElement('span'); time.textContent = item.delivery_time || 'กำหนดเวลาหลังสรุปขอบเขต';
-                const link = document.createElement('a'); link.href = '#contact'; link.textContent = 'สอบถามแพ็กเกจ ↗';
+                const link = document.createElement('a'); link.href = '#contact'; arrowLink(link, 'สอบถามแพ็กเกจ');
                 link.addEventListener('click', () => { if (serviceInput && item.service?.slug) serviceInput.value = item.service.slug; });
                 footer.append(time, link);
                 const card = document.createElement('article'); card.className = item.is_featured ? 'featured' : ''; card.append(meta, name, price, description, features, footer); return card;

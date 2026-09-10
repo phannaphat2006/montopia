@@ -1,5 +1,62 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="ส่งบรีฟโครงการเข้าสู่ระบบ MONSTOPIA"><title>ส่งบรีฟโครงการ | MONSTOPIA</title><link rel="icon" href="logo.jpg"><link rel="stylesheet" href="portal.css"></head><body><a class="skip" href="#brief-main">ข้ามไปเนื้อหา</a><header class="workspace-header"><a class="brand" href="/"><img src="logo.jpg" alt="" width="34" height="34">MONSTOPIA<span>PROJECT BRIEF</span></a><nav><a href="/workspace">Client Workspace</a><a href="/#contact">ติดต่อทีมงาน ↗</a></nav></header><main class="brief-shell" id="brief-main"><p class="eyebrow">PROJECT ENQUIRY</p><h1>เล่าโจทย์ของคุณ<br>ให้ทีมเราเข้าใจตั้งแต่ต้น</h1><p class="muted">ข้อมูลจะถูกบันทึกในระบบจริงเพื่อให้ทีมงานติดตามและตอบกลับ ไม่ได้สร้างเพียงร่างอีเมล</p><div class="brief-steps" aria-label="ขั้นตอน"><span class="active" aria-current="step">01 ติดต่อ</span><span>02 เป้าหมาย</span><span>03 ขอบเขต</span><span>04 ส่งบรีฟ</span></div><div class="panel"><form id="brief-form">
-<fieldset data-step="0"><legend>ข้อมูลสำหรับติดต่อกลับ</legend><label class="field">ชื่อผู้ติดต่อหรือบริษัท *<input name="client_name" required maxlength="100" autocomplete="organization"></label><div class="field-row"><label class="field">อีเมล *<input name="client_email" type="email" required maxlength="150" autocomplete="email"></label><label class="field">เบอร์โทรศัพท์ *<input name="client_phone" type="tel" required maxlength="20" pattern="[0-9+() .-]{8,20}" autocomplete="tel"></label></div><label class="field">งบประมาณตั้งต้น *<select name="budget_range" required><option value="">กรุณาเลือก</option><option>ยังไม่กำหนด</option><option>ต่ำกว่า 100,000 บาท</option><option>100,000–300,000 บาท</option><option>300,000–1,000,000 บาท</option><option>มากกว่า 1,000,000 บาท</option></select></label></fieldset>
-<fieldset data-step="1" hidden disabled><legend>เริ่มจากสิ่งที่อยากให้ดีขึ้น</legend><label class="field">ชื่อโครงการ / แนวคิด *<input name="project" required maxlength="160" placeholder="เช่น ระบบจัดการงานบริการหลังการขาย"></label><label class="field">ปัญหาที่ต้องการแก้ *<textarea name="problem" required minlength="20" maxlength="1500"></textarea></label><label class="field">ผลลัพธ์ที่อยากเห็น *<textarea name="outcome" required maxlength="1000"></textarea></label></fieldset>
-<fieldset data-step="2" hidden disabled><legend>ผู้ใช้และขอบเขตระยะแรก</legend><label class="field">รูปแบบระบบ<select name="type"><option>ยังไม่แน่ใจ / ต้องการคำแนะนำ</option><option>Web Application / ระบบองค์กร</option><option>Mobile Application</option><option>ปรับปรุงหรือเชื่อมต่อระบบเดิม</option><option>Cloud & Infrastructure</option><option>Web3 / NFT</option></select></label><label class="field">ผู้ใช้งานหลัก *<input name="users" required maxlength="300"></label><label class="field">ฟังก์ชันจำเป็นในระยะแรก *<textarea name="features" required maxlength="2000"></textarea></label><label class="field">ระบบที่ต้องเชื่อมต่อ / ข้อจำกัด<textarea name="constraints" maxlength="1000"></textarea></label><label class="field">ช่วงเวลาที่ต้องการเริ่ม<select name="timeline"><option>ต้องการคำแนะนำ</option><option>ภายใน 1 เดือน</option><option>ภายใน 1–3 เดือน</option><option>มากกว่า 3 เดือน</option></select></label><div class="note">การส่งบรีฟเป็นการขอให้ติดต่อกลับ ยังไม่ใช่ใบเสนอราคาหรือข้อตกลงจ้างงาน</div></fieldset>
-<p class="form-error" id="brief-error" role="alert"></p><div class="actions"><button type="button" id="brief-back" hidden>← ย้อนกลับ</button><button type="submit" class="primary" id="brief-next">ถัดไป →</button></div></form><section id="brief-success" hidden tabindex="-1"><p class="eyebrow">SUBMITTED</p><h2>รับบรีฟเรียบร้อย</h2><p>ทีมงานสามารถเปิดรายการนี้จากระบบหลังบ้านได้แล้ว</p><p class="note">หมายเลขอ้างอิง: <strong id="brief-reference"></strong></p><div class="actions"><a class="button primary" href="/">กลับหน้าเว็บไซต์</a><button type="button" id="brief-new">ส่งบรีฟใหม่</button></div></section></div><p class="privacy-line">ข้อมูลถูกส่งเป็น JSON ผ่าน HTTPS และบันทึกในฐานข้อมูลของระบบ กรุณาไม่ใส่รหัสผ่าน ข้อมูลบัตร หรือข้อมูลลับที่ไม่จำเป็น</p></main><script src="brief.js" defer></script></body></html>
+<!doctype html>
+<html lang="th">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="ส่งบรีฟโครงการเข้าสู่ระบบ MONSTOPIA">
+    <title>ส่งบรีฟโครงการ | MONSTOPIA</title>
+    <link rel="icon" href="logo.jpg">
+    <link rel="stylesheet" href="portal.css">
+    <link rel="stylesheet" href="icons.css">
+</head>
+<body>
+    <a class="skip" href="#brief-main">ข้ามไปเนื้อหา</a>
+    <header class="workspace-header">
+        <a class="brand" href="/"><img src="logo.jpg" alt="" width="34" height="34">MONSTOPIA<span>PROJECT BRIEF</span></a>
+        <nav><a href="/workspace">Client Workspace</a><a href="/#contact">ติดต่อทีมงาน <span class="icon-arrow" aria-hidden="true"></span></a></nav>
+    </header>
+    <main class="brief-shell" id="brief-main">
+        <p class="eyebrow">PROJECT ENQUIRY</p>
+        <h1>เล่าโจทย์ของคุณ<br>ให้ทีมเราเข้าใจตั้งแต่ต้น</h1>
+        <p class="muted">ข้อมูลจะถูกบันทึกในระบบจริงเพื่อให้ทีมงานติดตามและตอบกลับ ไม่ได้สร้างเพียงร่างอีเมล</p>
+        <div class="brief-steps" aria-label="ขั้นตอน"><span class="active" aria-current="step">01 ติดต่อ</span><span>02 เป้าหมาย</span><span>03 ขอบเขต</span><span>04 ส่งบรีฟ</span></div>
+        <div class="panel">
+            <form id="brief-form">
+                <fieldset data-step="0">
+                    <legend>ข้อมูลสำหรับติดต่อกลับ</legend>
+                    <label class="field">ชื่อผู้ติดต่อหรือบริษัท *<input name="client_name" required maxlength="100" autocomplete="organization"></label>
+                    <div class="field-row">
+                        <label class="field">อีเมล *<input name="client_email" type="email" required maxlength="150" autocomplete="email"></label>
+                        <label class="field">เบอร์โทรศัพท์ *<input name="client_phone" type="tel" required maxlength="20" pattern="[0-9+() .-]{8,20}" autocomplete="tel"></label>
+                    </div>
+                    <label class="field">งบประมาณตั้งต้น *<select name="budget_range" required><option value="">กรุณาเลือก</option><option>ยังไม่กำหนด</option><option>ต่ำกว่า 100,000 บาท</option><option>100,000–300,000 บาท</option><option>300,000–1,000,000 บาท</option><option>มากกว่า 1,000,000 บาท</option></select></label>
+                </fieldset>
+                <fieldset data-step="1" hidden disabled>
+                    <legend>เริ่มจากสิ่งที่อยากให้ดีขึ้น</legend>
+                    <label class="field">ชื่อโครงการ / แนวคิด *<input name="project" required maxlength="160" placeholder="เช่น ระบบจัดการงานบริการหลังการขาย"></label>
+                    <label class="field">ปัญหาที่ต้องการแก้ *<textarea name="problem" required minlength="20" maxlength="1500"></textarea></label>
+                    <label class="field">ผลลัพธ์ที่อยากเห็น *<textarea name="outcome" required maxlength="1000"></textarea></label>
+                </fieldset>
+                <fieldset data-step="2" hidden disabled>
+                    <legend>ผู้ใช้และขอบเขตระยะแรก</legend>
+                    <label class="field">รูปแบบระบบ<select name="type"><option>ยังไม่แน่ใจ / ต้องการคำแนะนำ</option><option>Web Application / ระบบองค์กร</option><option>Mobile Application</option><option>ปรับปรุงหรือเชื่อมต่อระบบเดิม</option><option>Cloud & Infrastructure</option><option>Web3 / NFT</option></select></label>
+                    <label class="field">ผู้ใช้งานหลัก *<input name="users" required maxlength="300"></label>
+                    <label class="field">ฟังก์ชันจำเป็นในระยะแรก *<textarea name="features" required maxlength="2000"></textarea></label>
+                    <label class="field">ระบบที่ต้องเชื่อมต่อ / ข้อจำกัด<textarea name="constraints" maxlength="1000"></textarea></label>
+                    <label class="field">ช่วงเวลาที่ต้องการเริ่ม<select name="timeline"><option>ต้องการคำแนะนำ</option><option>ภายใน 1 เดือน</option><option>ภายใน 1–3 เดือน</option><option>มากกว่า 3 เดือน</option></select></label>
+                    <div class="note">การส่งบรีฟเป็นการขอให้ติดต่อกลับ ยังไม่ใช่ใบเสนอราคาหรือข้อตกลงจ้างงาน</div>
+                </fieldset>
+                <p class="form-error" id="brief-error" role="alert"></p>
+                <div class="actions"><button type="button" class="has-back-icon" id="brief-back" hidden>ย้อนกลับ</button><button type="submit" class="primary has-next-icon" id="brief-next">ถัดไป</button></div>
+            </form>
+            <section id="brief-success" hidden tabindex="-1">
+                <p class="eyebrow">SUBMITTED</p><h2>รับบรีฟเรียบร้อย</h2><p>ทีมงานสามารถเปิดรายการนี้จากระบบหลังบ้านได้แล้ว</p>
+                <p class="note">หมายเลขอ้างอิง: <strong id="brief-reference"></strong></p>
+                <div class="actions"><a class="button primary" href="/">กลับหน้าเว็บไซต์</a><button type="button" id="brief-new">ส่งบรีฟใหม่</button></div>
+            </section>
+        </div>
+        <p class="privacy-line">ข้อมูลถูกส่งเป็น JSON ผ่าน HTTPS และบันทึกในฐานข้อมูลของระบบ กรุณาไม่ใส่รหัสผ่าน ข้อมูลบัตร หรือข้อมูลลับที่ไม่จำเป็น</p>
+    </main>
+    <script src="brief.js" defer></script>
+</body>
+</html>

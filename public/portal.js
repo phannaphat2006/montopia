@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const button = (text, onClick, classes = '') => el('button', { type: 'button', class: classes, onClick }, text);
     const badge = (text, status = '') => el('span', { class: `badge ${status}` }, text);
+    const arrowIcon = () => el('span', { class: 'icon-arrow', 'aria-hidden': 'true' });
     const publishedBadge = value => badge(value ? 'เผยแพร่' : 'ซ่อน', value ? 'approved' : 'draft');
     const yesNoOptions = [['1', 'เผยแพร่'], ['0', 'ซ่อนจากหน้าเว็บไซต์']];
 
@@ -119,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function login() {
         const form = el('form', {}, field('email', 'อีเมล', 'email'), field('password', 'รหัสผ่าน', 'password'));
         const error = el('p', { class: 'form-error', role: 'alert' });
-        const submit = el('button', { class: 'primary', type: 'submit' }, 'เข้าสู่ระบบ →');
+        const submit = el('button', { class: 'primary has-next-icon', type: 'submit' }, 'เข้าสู่ระบบ');
         form.append(submit, error);
         form.addEventListener('submit', async event => {
             event.preventDefault();
@@ -188,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const views = { overview: overviewView, projects: projectsView, inquiries: inquiriesView, company: companyView, services: servicesView, packages: packagesView, portfolios: portfoliosView, articles: articlesView, users: usersView };
             const content = await (views[active] || overviewView)();
             root.replaceChildren(shell(el('section', { class: 'main-content' },
-                el('div', { class: 'page-heading' }, el('div', {}, el('p', { class: 'eyebrow' }, 'CONTENT & OPERATIONS'), el('h1', {}, 'ระบบบริหารเว็บไซต์ MONSTOPIA'), el('p', { class: 'muted' }, `เข้าสู่ระบบในฐานะ ${user.role}`)), el('a', { class: 'button small', href: '/', target: '_blank', rel: 'noopener' }, 'ดูหน้าเว็บไซต์ ↗')),
+                el('div', { class: 'page-heading' }, el('div', {}, el('p', { class: 'eyebrow' }, 'CONTENT & OPERATIONS'), el('h1', {}, 'ระบบบริหารเว็บไซต์ MONSTOPIA'), el('p', { class: 'muted' }, `เข้าสู่ระบบในฐานะ ${user.role}`)), el('a', { class: 'button small', href: '/', target: '_blank', rel: 'noopener' }, 'ดูหน้าเว็บไซต์', arrowIcon())),
                 nav,
                 content
             )));
@@ -213,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function metricCard(label, value, key) {
         const card = button('', () => goTo(key), 'metric-card');
-        card.append(el('span', { class: 'metric-label' }, label), el('strong', {}, value), el('small', {}, 'เปิดดูและจัดการ →'));
+        card.append(el('span', { class: 'metric-label' }, label), el('strong', {}, value), el('small', { class: 'metric-action' }, 'เปิดดูและจัดการ', el('span', { class: 'icon-next', 'aria-hidden': 'true' })));
         return card;
     }
 
