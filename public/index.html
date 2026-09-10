@@ -24,6 +24,7 @@
         href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="content.css">
     <script src="app.js" defer></script>
 </head>
 
@@ -40,8 +41,8 @@
             <button class="mobile-toggle" id="mobileToggle" type="button" aria-expanded="false"
                 aria-controls="mainNav">เมนู <span aria-hidden="true">☰</span></button>
             <div class="nav-links" id="mainNav">
-                <a href="index.html#services">บริการของเรา</a><a href="index.html#projects">ผลงาน</a><a
-                    href="operations.html">ขั้นตอนการทำงาน</a><a href="index.html#about">เกี่ยวกับบริษัท</a><a
+                <a href="index.html#services">บริการของเรา</a><a href="index.html#packages">แพ็กเกจ</a><a href="index.html#projects">ผลงาน</a><a
+                    href="index.html#insights">บทความ</a><a href="index.html#about">เกี่ยวกับบริษัท</a><a
                     class="nav-contact" href="index.html#contact">ปรึกษาโครงการ <span aria-hidden="true">↗</span></a>
             </div>
         </nav>
@@ -229,8 +230,8 @@
                 <div>
                     <p class="eyebrow">ABOUT MONSTOPIA</p>
                     <h2>ทีมพัฒนาที่คุยเรื่อง<br>ธุรกิจกับคุณได้</h2>
-                    <p class="about-lead">บริษัท มอนส์โทเปีย จำกัด</p>
-                    <p>เราให้บริการพัฒนาซอฟต์แวร์ เว็บแอปพลิเคชัน โมบายแอป และโครงสร้างระบบ
+                    <p class="about-lead" data-company-name>บริษัท มอนส์โทเปีย จำกัด</p>
+                    <p data-company-description>เราให้บริการพัฒนาซอฟต์แวร์ เว็บแอปพลิเคชัน โมบายแอป และโครงสร้างระบบ
                         โดยให้ความสำคัญกับการทำความเข้าใจงานของผู้ใช้และสิ่งที่ธุรกิจต้องการแก้ไข</p>
                     <p>การทำงานเริ่มจากขอบเขตที่ชัดเจน ตั้งแต่สิ่งที่ระบบต้องทำ ผู้ที่จะใช้งาน
                         ไปจนถึงวิธีทดสอบและแนวทางดูแลหลังส่งมอบ</p><a class="text-link"
@@ -318,6 +319,16 @@
                 </div>
             </div>
         </section>
+        <section class="section packages-section" id="packages" hidden>
+            <div class="container">
+                <div class="section-heading">
+                    <div><p class="eyebrow">SERVICE PACKAGES</p><h2>รูปแบบการเริ่มงาน<br>ที่เลือกได้ตามความพร้อม</h2></div>
+                    <p>ราคาและระยะเวลาเป็นข้อมูลเริ่มต้น ทีมงานจะยืนยันอีกครั้งหลังตรวจขอบเขตและข้อจำกัดของโครงการ</p>
+                </div>
+                <div class="package-grid" id="packageGrid"></div>
+            </div>
+        </section>
+
         <section class="section" id="pricing">
             <div class="container brief-banner">
                 <div>
@@ -367,19 +378,29 @@
             </div>
         </section>
 
+        <section class="section insights-section" id="insights" hidden>
+            <div class="container">
+                <div class="section-heading">
+                    <div><p class="eyebrow">INSIGHTS & UPDATES</p><h2>แนวคิดก่อนเริ่ม<br>พัฒนาระบบ</h2></div>
+                    <p>บทความจากทีมเพื่อช่วยให้เจ้าของโครงการเตรียมข้อมูล ตัดสินใจ และตรวจรับงานได้ชัดเจนขึ้น</p>
+                </div>
+                <div class="article-grid" id="articleGrid"></div>
+            </div>
+        </section>
+
         <section class="section contact-section" id="contact">
             <div class="container contact-layout">
                 <div class="contact-copy">
                     <p class="eyebrow">LET’S TALK</p>
                     <h2>คุณมีโจทย์<br>เราพร้อมฟัง</h2>
                     <p>เล่าให้เราฟังว่าต้องการปรับปรุงงานส่วนไหน หรือกำลังเริ่มบริการอะไรใหม่
-                        ไม่จำเป็นต้องเลือกเทคโนโลยีมาแล้ว</p><a class="contact-email"
+                        ไม่จำเป็นต้องเลือกเทคโนโลยีมาแล้ว</p><a class="contact-email" data-company-email
                         href="mailto:contact@monstopia.co.th">contact@monstopia.co.th <span
                             aria-hidden="true">↗</span></a>
-                    <div class="company-details"><strong>บริษัท มอนส์โทเปีย จำกัด</strong>
-                        <p>เลขที่ 1 อาคารพาร์ค สีลม ชั้น 30 ยูนิต 30.20<br>ถนนคอนแวนต์ แขวงสีลม
+                    <div class="company-details"><strong data-company-name>บริษัท มอนส์โทเปีย จำกัด</strong>
+                        <p data-company-address>เลขที่ 1 อาคารพาร์ค สีลม ชั้น 30 ยูนิต 30.20<br>ถนนคอนแวนต์ แขวงสีลม
                             เขตบางรัก<br>กรุงเทพมหานคร 10500</p>
-                        <p>เลขทะเบียนนิติบุคคล 0135566029506</p>
+                        <p data-company-registration>เลขทะเบียนนิติบุคคล 0135566029506</p>
                     </div>
                 </div>
                 <div class="contact-form-card">
@@ -449,14 +470,14 @@
     <footer class="footer">
         <div class="container footer-grid">
             <div><a class="footer-brand" href="index.html">MONSTOPIA<span>.</span></a>
-                <p>บริษัท มอนส์โทเปีย จำกัด<br>พัฒนาซอฟต์แวร์และระบบสำหรับธุรกิจ</p>
+                <p><span data-company-name>บริษัท มอนส์โทเปีย จำกัด</span><br>พัฒนาซอฟต์แวร์และระบบสำหรับธุรกิจ</p>
             </div>
             <div>
                 <h3>รู้จักเรา</h3><a href="index.html#services">บริการของเรา</a><a
                     href="index.html#projects">ผลงานและความร่วมมือ</a><a href="operations.html">ขั้นตอนการทำงาน</a>
             </div>
             <div>
-                <h3>เริ่มต้นพูดคุย</h3><a href="mailto:contact@monstopia.co.th">contact@monstopia.co.th</a>
+                <h3>เริ่มต้นพูดคุย</h3><a href="mailto:contact@monstopia.co.th" data-company-email>contact@monstopia.co.th</a>
                 <p>Park Silom, กรุงเทพมหานคร</p><a href="index.html#contact">ส่งรายละเอียดโครงการ <span
                         aria-hidden="true">↗</span></a>
             </div>

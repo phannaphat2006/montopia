@@ -26,9 +26,9 @@ Frontend ไม่มีขั้นตอนคอมไพล์ Node/esbuild 
 
 | บทบาท | สิทธิ์ |
 |---|---|
-| Guest | ดูเว็บไซต์/Portfolio และส่งบรีฟ |
+| Guest | ดูข้อมูลบริษัท บริการ แพ็กเกจ Portfolio ข่าวสาร และส่งบรีฟ |
 | Client | สิทธิ์ Guest + ดูเฉพาะ Project/Milestone ที่ `projects.client_user_id` ตรงกับบัญชีตนเอง |
-| Staff | ดูและจัดการ Portfolio, Inquiry/Reply, Project และ Milestone แต่จัดการบัญชีผู้ใช้ไม่ได้ |
+| Staff | CRUD เนื้อหาเว็บไซต์ และจัดการ Portfolio, Inquiry/Reply, Project และ Milestone แต่จัดการบัญชีผู้ใช้ไม่ได้ |
 | Administrator | สิทธิ์ Staff + CRUD บัญชีและกำหนด Role |
 
 ค่าเริ่มต้นของ `users.role` เป็น `client` ตามหลัก Least Privilege ไม่ใช้ `staff` เป็นค่าเริ่มต้น เพราะอาจให้สิทธิ์หลังบ้านโดยไม่ได้ตั้งใจ
@@ -42,6 +42,7 @@ erDiagram
     INQUIRIES ||--o{ INQUIRY_REPLIES : has
     INQUIRIES o|--o| PROJECTS : becomes
     PROJECTS ||--o{ MILESTONES : contains
+    SERVICES ||--o{ SERVICE_PACKAGES : groups
 
     USERS {
         bigint id PK
@@ -93,6 +94,36 @@ erDiagram
         text description
         date due_date
         enum status
+    }
+    COMPANY_PROFILES {
+        bigint id PK
+        varchar name
+        varchar email
+        text address
+        boolean is_published
+    }
+    SERVICES {
+        bigint id PK
+        varchar title
+        varchar slug UK
+        text description
+        boolean is_published
+    }
+    SERVICE_PACKAGES {
+        bigint id PK
+        bigint service_id FK
+        varchar name
+        varchar price_label
+        boolean is_featured
+        boolean is_published
+    }
+    ARTICLES {
+        bigint id PK
+        varchar title
+        varchar slug UK
+        longtext content
+        enum status
+        timestamp published_at
     }
 ```
 
@@ -170,17 +201,81 @@ erDiagram
 | status | ENUM(pending, in_progress, delivered, approved), default pending | สถานะงวดงาน |
 | timestamps | TIMESTAMP, NULL | เวลาสร้าง/แก้ไข |
 
+### company_profiles
+
+| Field | Type / Constraint | ความหมาย |
+|---|---|---|
+| name | VARCHAR(150), NOT NULL | ชื่อบริษัท |
+| tagline | VARCHAR(255), NULL | ข้อความแนะนำสั้น |
+| description | TEXT, NOT NULL | รายละเอียดบริษัท |
+| email | VARCHAR(150), NOT NULL | อีเมลติดต่อ |
+| phone | VARCHAR(30), NULL | เบอร์โทร |
+| address | TEXT, NOT NULL | ที่อยู่บริษัท |
+| registration_number | VARCHAR(30), NULL | เลขทะเบียนนิติบุคคล |
+| is_published | BOOLEAN, default true | สถานะการเผยแพร่ |
+
+### services
+
+| Field | Type / Constraint | ความหมาย |
+|---|---|---|
+| title | VARCHAR(150), NOT NULL | ชื่อบริการ |
+| slug | VARCHAR(160), UNIQUE | ชื่อสำหรับอ้างอิงใน URL/API |
+| short_description | VARCHAR(255), NOT NULL | คำอธิบายสั้น |
+| description | TEXT, NOT NULL | รายละเอียดบริการ |
+| icon_label | VARCHAR(20), NULL | อักษรย่อบนการ์ด |
+| display_order | INT UNSIGNED, default 0 | ลำดับการแสดง |
+| is_published | BOOLEAN, default true | สถานะการเผยแพร่ |
+
+### service_packages
+
+| Field | Type / Constraint | ความหมาย |
+|---|---|---|
+| service_id | BIGINT UNSIGNED, FK, NULL | บริการที่เกี่ยวข้อง |
+| name | VARCHAR(150), NOT NULL | ชื่อแพ็กเกจ |
+| price_label | VARCHAR(100), NOT NULL | ข้อความราคา |
+| delivery_time | VARCHAR(100), NULL | ระยะเวลาดำเนินงาน |
+| description | TEXT, NOT NULL | รายละเอียดแพ็กเกจ |
+| features | TEXT, NULL | รายการสิ่งที่ได้รับ คั่นด้วยบรรทัดใหม่ |
+| is_featured | BOOLEAN, default false | แพ็กเกจแนะนำ |
+| is_published | BOOLEAN, default true | สถานะการเผยแพร่ |
+| display_order | INT UNSIGNED, default 0 | ลำดับการแสดง |
+
+### articles
+
+| Field | Type / Constraint | ความหมาย |
+|---|---|---|
+| title | VARCHAR(180), NOT NULL | ชื่อบทความ |
+| slug | VARCHAR(190), UNIQUE | ชื่อสำหรับอ้างอิงบทความ |
+| excerpt | VARCHAR(300), NOT NULL | ข้อความเกริ่นนำ |
+| content | LONGTEXT, NOT NULL | เนื้อหาบทความ |
+| image_url | VARCHAR(255), NULL | URL รูปภาพ |
+| status | ENUM(draft, published), default draft | สถานะบทความ |
+| published_at | TIMESTAMP, NULL | วันเวลาเผยแพร่ |
+
 ## 5. Internal API
 
 | Endpoint | Method | Role | การทำงาน |
 |---|---|---|---|
 | `/api/csrf` | GET | Public | รับ CSRF token สำหรับ same-origin Fetch |
 | `/api/portfolios` | GET | Public | อ่านผลงาน |
+| `/api/company` | GET | Public | อ่านข้อมูลบริษัทที่เผยแพร่ |
+| `/api/services` | GET | Public | อ่านบริการที่เผยแพร่ |
+| `/api/service-packages` | GET | Public | อ่านแพ็กเกจที่เผยแพร่ |
+| `/api/articles` | GET | Public | อ่านข่าวสารที่เผยแพร่แล้ว |
 | `/api/inquiries` | POST | Public, rate limited | Validation + บันทึกบรีฟ + แจ้ง LINE |
 | `/api/auth/login` | POST | Public, rate limited | สร้าง Session |
 | `/api/auth/me` | GET | Public | ตรวจ Session ปัจจุบัน |
 | `/api/auth/logout` | POST | Authenticated | ยกเลิก Session |
 | `/api/admin/clients` | GET | Admin, Staff | อ่านบัญชี Client สำหรับผูก Project |
+| `/api/admin/dashboard` | GET | Admin, Staff | อ่านตัวเลขสรุปและบรีฟล่าสุด |
+| `/api/admin/company-profiles` | GET/POST | Admin, Staff | อ่าน/เพิ่มข้อมูลบริษัท |
+| `/api/admin/company-profiles/{id}` | PUT/DELETE | Admin, Staff | แก้ไข/ลบข้อมูลบริษัท |
+| `/api/admin/services` | GET/POST | Admin, Staff | อ่าน/เพิ่มบริการ |
+| `/api/admin/services/{id}` | PUT/DELETE | Admin, Staff | แก้ไข/ลบบริการ |
+| `/api/admin/service-packages` | GET/POST | Admin, Staff | อ่าน/เพิ่มแพ็กเกจ |
+| `/api/admin/service-packages/{id}` | PUT/DELETE | Admin, Staff | แก้ไข/ลบแพ็กเกจ |
+| `/api/admin/articles` | GET/POST | Admin, Staff | อ่าน/เพิ่มข่าวสาร |
+| `/api/admin/articles/{id}` | PUT/DELETE | Admin, Staff | แก้ไข/ลบข่าวสาร |
 | `/api/admin/portfolios` | POST | Admin, Staff | เพิ่มผลงาน |
 | `/api/admin/portfolios/{id}` | PUT/DELETE | Admin, Staff | แก้ไข/ลบผลงาน |
 | `/api/admin/inquiries` | GET | Admin, Staff | อ่านรายการบรีฟและคำตอบ |
