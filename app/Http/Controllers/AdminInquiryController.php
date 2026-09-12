@@ -15,7 +15,7 @@ class AdminInquiryController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(['data' => Inquiry::with(['replies.user:id,name'])->latest()->paginate(20)]);
+        return response()->json(['data' => Inquiry::with(['replies.user:id,name', 'project:id,inquiry_id,project_name'])->latest()->paginate(20)]);
     }
 
     public function reply(Request $request, Inquiry $inquiry): JsonResponse

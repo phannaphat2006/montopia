@@ -39,9 +39,14 @@ Frontend ไม่มีขั้นตอนคอมไพล์ Node/esbuild 
 erDiagram
     USERS ||--o{ INQUIRY_REPLIES : writes
     USERS ||--o{ PROJECTS : owns_as_client
+    USERS ||--o{ PROJECTS : updates
+    USERS ||--o{ PROJECT_UPDATES : writes
+    USERS ||--o{ PROJECT_ATTACHMENTS : uploads
     INQUIRIES ||--o{ INQUIRY_REPLIES : has
     INQUIRIES o|--o| PROJECTS : becomes
     PROJECTS ||--o{ MILESTONES : contains
+    PROJECTS ||--o{ PROJECT_UPDATES : records
+    PROJECTS ||--o{ PROJECT_ATTACHMENTS : stores
     SERVICES ||--o{ SERVICE_PACKAGES : groups
 
     USERS {
@@ -51,6 +56,8 @@ erDiagram
         varchar password
         enum role
         varchar phone
+        boolean must_change_password
+        timestamp last_login_at
     }
     PORTFOLIOS {
         bigint id PK
@@ -84,6 +91,7 @@ erDiagram
         varchar client_name
         decimal total_budget
         enum status
+        tinyint progress_percent
         date start_date
         date end_date
     }
@@ -94,6 +102,29 @@ erDiagram
         text description
         date due_date
         enum status
+        timestamp completed_at
+    }
+    PROJECT_UPDATES {
+        bigint id PK
+        bigint project_id FK
+        bigint user_id FK
+        varchar type
+        varchar title
+        text body
+        varchar from_status
+        varchar to_status
+        tinyint progress_percent
+        boolean visible_to_client
+    }
+    PROJECT_ATTACHMENTS {
+        bigint id PK
+        bigint project_id FK
+        bigint user_id FK
+        varchar original_name
+        varchar stored_path
+        varchar mime_type
+        bigint size_bytes
+        enum visibility
     }
     COMPANY_PROFILES {
         bigint id PK
@@ -142,6 +173,8 @@ erDiagram
 | password | VARCHAR(255), NOT NULL | รหัสผ่าน Bcrypt |
 | role | ENUM(admin, staff, client), default client | ระดับสิทธิ์ |
 | phone | VARCHAR(20), NULL | เบอร์โทร |
+| must_change_password | BOOLEAN, default false | บังคับเปลี่ยนรหัสผ่านชั่วคราว; Controller ตั้งเป็น true เมื่อสร้างบัญชี |
+| last_login_at | TIMESTAMP, NULL | เวลาเข้าสู่ระบบล่าสุด |
 | timestamps | TIMESTAMP, NULL | เวลาสร้าง/แก้ไข |
 
 ### portfolios
@@ -185,9 +218,11 @@ erDiagram
 | project_name | VARCHAR(150), NOT NULL | ชื่อโครงการ |
 | client_name | VARCHAR(100), NOT NULL | ชื่อลูกค้า/องค์กร |
 | total_budget | DECIMAL(10,2), NOT NULL | มูลค่าโครงการ; ไม่ส่งให้ Client API |
-| status | ENUM(active, completed, archived), default active | สถานะโครงการ |
+| status | ENUM(planned, in_progress, review, completed, archived), default planned | สถานะโครงการ |
+| progress_percent | TINYINT UNSIGNED, default 0 | เปอร์เซ็นต์ความคืบหน้า 0-100 |
 | start_date | DATE, NOT NULL | วันเริ่ม |
 | end_date | DATE, NULL | วันสิ้นสุด |
+| updated_by | BIGINT UNSIGNED, FK, NULL | เจ้าหน้าที่ที่แก้ล่าสุด |
 | timestamps | TIMESTAMP, NULL | เวลาสร้าง/แก้ไข |
 
 ### milestones
@@ -199,6 +234,34 @@ erDiagram
 | description | TEXT, NULL | รายละเอียดส่งมอบ |
 | due_date | DATE, NOT NULL | กำหนดส่ง |
 | status | ENUM(pending, in_progress, delivered, approved), default pending | สถานะงวดงาน |
+| completed_at | TIMESTAMP, NULL | เวลาอนุมัติ/จบงวดงาน |
+| timestamps | TIMESTAMP, NULL | เวลาสร้าง/แก้ไข |
+
+### project_updates
+
+| Field | Type / Constraint | ความหมาย |
+|---|---|---|
+| project_id | BIGINT UNSIGNED, FK, CASCADE DELETE | โครงการที่อัปเดต |
+| user_id | BIGINT UNSIGNED, FK, NULL | ผู้บันทึก |
+| type | VARCHAR(40), default note, INDEX | ประเภทเหตุการณ์ เช่น note, status, file |
+| title | VARCHAR(180), NOT NULL | หัวข้ออัปเดต |
+| body | TEXT, NULL | รายละเอียดความคืบหน้า |
+| from_status / to_status | VARCHAR(30), NULL | สถานะก่อนและหลังการเปลี่ยน |
+| progress_percent | TINYINT UNSIGNED, NULL, 0-100 | ค่า Progress ณ เวลานั้น |
+| visible_to_client | BOOLEAN, default true | ลูกค้าเห็นใน Workspace หรือไม่ |
+| timestamps | TIMESTAMP, NULL | เวลาสร้าง/แก้ไข |
+
+### project_attachments
+
+| Field | Type / Constraint | ความหมาย |
+|---|---|---|
+| project_id | BIGINT UNSIGNED, FK, CASCADE DELETE | โครงการเจ้าของไฟล์ |
+| user_id | BIGINT UNSIGNED, FK, NULL | เจ้าหน้าที่ผู้อัปโหลด |
+| original_name | VARCHAR(255), NOT NULL | ชื่อไฟล์ที่ผู้ใช้เห็น |
+| stored_path | VARCHAR(500), UNIQUE | ที่อยู่ไฟล์ Private; ไม่ส่งผ่าน API |
+| mime_type | VARCHAR(120), NOT NULL | ชนิดไฟล์ที่ Server ตรวจพบ |
+| size_bytes | BIGINT UNSIGNED | ขนาดไฟล์ ไม่เกินค่าที่กำหนด |
+| visibility | ENUM(client, internal), default client | Client เจ้าของโครงการดาวน์โหลดได้หรือเก็บภายใน |
 | timestamps | TIMESTAMP, NULL | เวลาสร้าง/แก้ไข |
 
 ### company_profiles
@@ -266,6 +329,8 @@ erDiagram
 | `/api/auth/login` | POST | Public, rate limited | สร้าง Session |
 | `/api/auth/me` | GET | Public | ตรวจ Session ปัจจุบัน |
 | `/api/auth/logout` | POST | Authenticated | ยกเลิก Session |
+| `/api/account/password` | PUT | Authenticated | เปลี่ยนรหัสผ่านและยกเลิกสถานะรหัสผ่านชั่วคราว |
+| `/api/project-files/{attachment}/download` | GET | Team/Project owner | ดาวน์โหลดไฟล์ผ่าน Controller หลังตรวจสิทธิ์ |
 | `/api/admin/clients` | GET | Admin, Staff | อ่านบัญชี Client สำหรับผูก Project |
 | `/api/admin/dashboard` | GET | Admin, Staff | อ่านตัวเลขสรุปและบรีฟล่าสุด |
 | `/api/admin/company-profiles` | GET/POST | Admin, Staff | อ่าน/เพิ่มข้อมูลบริษัท |
@@ -281,23 +346,28 @@ erDiagram
 | `/api/admin/inquiries` | GET | Admin, Staff | อ่านรายการบรีฟและคำตอบ |
 | `/api/admin/inquiries/{id}/reply` | POST | Admin, Staff | บันทึก Reply/Status แล้วส่งอีเมล |
 | `/api/admin/projects` | GET/POST | Admin, Staff | อ่าน/เปิดโครงการ |
-| `/api/admin/projects/{id}` | PUT/DELETE | Admin, Staff | แก้ไข/Archive โครงการ |
+| `/api/admin/projects/{id}` | GET/PUT/DELETE | Admin, Staff | อ่านรายละเอียด แก้ไข หรือ Archive โครงการ |
+| `/api/admin/projects/{id}/updates` | POST | Admin, Staff | บันทึก Progress/History และเลือกแจ้งอีเมลลูกค้า |
 | `/api/admin/projects/{id}/milestones` | GET/POST | Admin, Staff | อ่าน/เพิ่ม Milestone |
 | `/api/admin/projects/{id}/milestones/{milestone}` | PUT | Admin, Staff | อัปเดต Milestone ใน Project ที่ตรงกัน |
+| `/api/admin/projects/{id}/attachments` | GET/POST | Admin, Staff | อ่าน/อัปโหลดไฟล์ Private ขนาดไม่เกิน 10 MB |
+| `/api/admin/projects/{id}/attachments/{attachment}` | DELETE | Admin, Staff | ลบไฟล์หลังตรวจว่าอยู่ใน Project เดียวกัน |
 | `/api/admin/users` | GET/POST | Admin | อ่าน/สร้างบัญชี |
 | `/api/admin/users/{id}` | PUT/DELETE | Admin | แก้ไข/ลบบัญชี |
-| `/api/client/projects` | GET | Client | อ่าน Project/Milestone ของบัญชีปัจจุบัน |
+| `/api/client/projects` | GET | Client | อ่าน Project/Milestone/Update/ไฟล์ที่อนุญาตของบัญชีปัจจุบัน |
 
 ## 6. Security Decisions
 
 - Session ID อยู่ใน cookie แบบ HttpOnly; Production บังคับ Secure cookie ผ่าน `.env`
 - State-changing request ผ่าน CSRF middleware และ Validate Request ฝั่ง Server
 - Login และฟอร์ม Public มี rate limiting
-- Password ใช้ Laravel Hash driver `bcrypt`; ไม่มีรหัสผ่านเริ่มต้นใน Seeder
+- Password ใช้ Laravel Hash driver `bcrypt`; บัญชีใหม่ใช้รหัสผ่านชั่วคราวและบังคับเปลี่ยนครั้งแรก
 - Client query เริ่มจาก Relationship ของผู้ใช้ ไม่รับ client/project id จาก Browser
 - Nested Milestone update ตรวจว่า `milestone.project_id` ตรงกับ Project ใน URL
+- ไฟล์เก็บใน Private disk, เปลี่ยนชื่อเป็น UUID และ Download ผ่าน Controller ที่ตรวจ Role/Ownership
 - Email/LINE failures ถูก Log โดยไม่เปิดเผย token และไม่ย้อนข้อมูล Inquiry ที่บันทึกสำเร็จแล้ว
 - Project delete ใน API หมายถึง Archive เพื่อรักษาประวัติการดำเนินงาน
+- Database Backup ทำรายวันและลบชุดเก่าตาม Retention โดยไม่ส่งรหัสผ่านฐานข้อมูลผ่าน Process Argument
 
 ## 7. External references
 

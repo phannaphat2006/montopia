@@ -3,19 +3,23 @@
 namespace Tests\Feature;
 
 use App\Mail\InquiryReplied;
+use App\Mail\ProjectActivityPublished;
 use App\Models\Article;
 use App\Models\CompanyProfile;
 use App\Models\Inquiry;
 use App\Models\Milestone;
 use App\Models\Portfolio;
 use App\Models\Project;
+use App\Models\ProjectAttachment;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SystemApiTest extends TestCase
@@ -24,7 +28,7 @@ class SystemApiTest extends TestCase
 
     public function test_the_content_and_business_tables_are_created(): void
     {
-        foreach (['users', 'portfolios', 'inquiries', 'inquiry_replies', 'projects', 'milestones', 'company_profiles', 'services', 'service_packages', 'articles'] as $table) {
+        foreach (['users', 'portfolios', 'inquiries', 'inquiry_replies', 'projects', 'milestones', 'project_updates', 'project_attachments', 'company_profiles', 'services', 'service_packages', 'articles'] as $table) {
             $this->assertTrue(Schema::hasTable($table), "Missing table: {$table}");
         }
     }
@@ -296,7 +300,7 @@ class SystemApiTest extends TestCase
             'client_name' => 'Example Company',
             'total_budget' => 450000,
             'start_date' => '2026-09-15',
-        ])->assertCreated()->assertJsonPath('data.status', 'active');
+        ])->assertCreated()->assertJsonPath('data.status', 'planned');
 
         $projectId = $projectResponse->json('data.id');
         $this->actingAs($staff)->postJson("/api/admin/projects/{$projectId}/milestones", [
@@ -325,7 +329,7 @@ class SystemApiTest extends TestCase
         $this->actingAs($admin)->postJson('/api/admin/users', [
             'name' => 'New Client',
             'email' => 'new-client@example.com',
-            'password' => 'client-password-2026',
+            'password' => 'Client-Password-2026',
             'role' => 'client',
             'phone' => '089-999-9999',
         ])->assertCreated()->assertJsonPath('data.role', 'client');
@@ -334,7 +338,98 @@ class SystemApiTest extends TestCase
         $this->actingAs($admin)->deleteJson("/api/admin/users/{$admin->id}")->assertUnprocessable();
     }
 
-    private function projectFor(User $client, string $name, string $status = 'active'): Project
+    public function test_dashboard_reports_the_core_business_counts(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $client = User::factory()->create(['role' => 'client']);
+        Inquiry::create([
+            'client_name' => 'Dashboard Client',
+            'client_email' => 'dashboard@example.com',
+            'client_phone' => '081-000-0000',
+            'budget_range' => '100,000–300,000 บาท',
+            'project_scope' => 'Dashboard test project scope with enough detail.',
+        ]);
+        $this->projectFor($client, 'Dashboard Project');
+
+        $this->actingAs($admin)->getJson('/api/admin/dashboard')
+            ->assertOk()
+            ->assertJsonPath('data.inquiries', 1)
+            ->assertJsonPath('data.all_projects', 1)
+            ->assertJsonPath('data.clients', 1);
+    }
+
+    public function test_project_update_is_visible_to_the_owner_and_sends_email(): void
+    {
+        Mail::fake();
+        $staff = User::factory()->create(['role' => 'staff']);
+        $client = User::factory()->create(['role' => 'client', 'email' => 'project-owner@example.com']);
+        $project = $this->projectFor($client, 'Progress Project');
+
+        $this->actingAs($staff)->postJson("/api/admin/projects/{$project->id}/updates", [
+            'title' => 'ส่งหน้าจอให้ตรวจสอบ',
+            'body' => 'กรุณาตรวจสอบ Dashboard รอบแรก',
+            'progress_percent' => 65,
+            'status' => 'review',
+            'visible_to_client' => true,
+        ])->assertCreated()->assertJsonPath('data.progress_percent', 65);
+
+        $this->assertDatabaseHas('projects', ['id' => $project->id, 'status' => 'review', 'progress_percent' => 65]);
+        $this->actingAs($client)->getJson('/api/client/projects')
+            ->assertOk()
+            ->assertJsonPath('data.0.updates.0.title', 'ส่งหน้าจอให้ตรวจสอบ');
+        Mail::assertSent(ProjectActivityPublished::class, fn ($mail) => $mail->hasTo('project-owner@example.com'));
+    }
+
+    public function test_project_files_are_private_and_downloadable_only_by_the_team_or_owner(): void
+    {
+        Storage::fake('local');
+        Mail::fake();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $owner = User::factory()->create(['role' => 'client']);
+        $otherClient = User::factory()->create(['role' => 'client']);
+        $project = $this->projectFor($owner, 'File Project');
+
+        $attachmentId = $this->actingAs($admin)->post("/api/admin/projects/{$project->id}/attachments", [
+            'file' => UploadedFile::fake()->create('handover.pdf', 120, 'application/pdf'),
+            'visibility' => 'client',
+        ], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+
+        $attachment = ProjectAttachment::findOrFail($attachmentId);
+        Storage::disk('local')->assertExists($attachment->getRawOriginal('stored_path'));
+        $this->actingAs($owner)->get($attachment->download_url)->assertOk();
+        $this->actingAs($otherClient)->get($attachment->download_url)->assertForbidden();
+    }
+
+    public function test_user_can_change_a_temporary_password(): void
+    {
+        $client = User::factory()->create([
+            'role' => 'client',
+            'password' => 'TemporaryPass123',
+            'must_change_password' => true,
+        ]);
+
+        $this->actingAs($client)->putJson('/api/account/password', [
+            'current_password' => 'TemporaryPass123',
+            'password' => 'NewSecurePass456',
+            'password_confirmation' => 'NewSecurePass456',
+        ])->assertOk();
+
+        $client->refresh();
+        $this->assertFalse($client->must_change_password);
+        $this->assertTrue(Hash::check('NewSecurePass456', $client->password));
+    }
+
+    public function test_login_is_rate_limited_per_email_and_ip(): void
+    {
+        User::factory()->create(['email' => 'limited@example.com', 'password' => 'CorrectPassword123']);
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->postJson('/api/auth/login', ['email' => 'limited@example.com', 'password' => 'wrong-password'])->assertUnprocessable();
+        }
+
+        $this->postJson('/api/auth/login', ['email' => 'limited@example.com', 'password' => 'wrong-password'])->assertTooManyRequests();
+    }
+
+    private function projectFor(User $client, string $name, string $status = 'in_progress'): Project
     {
         return Project::create([
             'client_user_id' => $client->id,
@@ -342,6 +437,7 @@ class SystemApiTest extends TestCase
             'client_name' => $client->name,
             'total_budget' => 250000,
             'status' => $status,
+            'progress_percent' => $status === 'completed' ? 100 : 35,
             'start_date' => '2026-09-01',
         ]);
     }

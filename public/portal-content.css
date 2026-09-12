@@ -1,3 +1,36 @@
+html,
+body {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+.workspace-header,
+#workspace,
+.login-layout,
+.login-layout > *,
+.workspace-shell,
+.main-content {
+    min-width: 0;
+}
+
+.workspace-header .brand {
+    min-width: 0;
+}
+
+.workspace-header nav {
+    flex: 0 0 auto;
+}
+
+.login-intro h1,
+.login-intro p {
+    overflow-wrap: anywhere;
+}
+
+.password-gate-actions {
+    justify-content: space-between;
+}
+
 .overview-head {
     display: flex;
     justify-content: space-between;
@@ -149,6 +182,17 @@
     color: #946415;
 }
 
+.badge.planned {
+    background: #f0f1f2;
+    color: #566168;
+}
+
+.badge.review,
+.badge.delivered {
+    background: #fff2d9;
+    color: #946415;
+}
+
 .badge.contacted,
 .badge.active,
 .badge.published {
@@ -192,6 +236,310 @@
     margin: 0;
 }
 
+.loading-state {
+    min-height: 60vh;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    color: var(--muted);
+}
+
+.loading-state p {
+    font-size: 12px;
+}
+
+.spinner {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 14px;
+    border: 3px solid #dfe3e4;
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: workspace-spin .75s linear infinite;
+}
+
+@keyframes workspace-spin {
+    to { transform: rotate(360deg); }
+}
+
+.account-summary {
+    overflow-wrap: anywhere;
+}
+
+.side-nav {
+    display: grid;
+    gap: 22px;
+}
+
+.side-nav-group {
+    display: grid;
+    gap: 5px;
+}
+
+.side-nav-group > span {
+    padding: 0 11px 5px;
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+}
+
+.side-nav button {
+    justify-content: flex-start;
+    min-height: 39px;
+    border-color: transparent;
+    background: transparent;
+    color: var(--muted);
+}
+
+.side-nav button:hover {
+    color: var(--ink);
+    background: var(--paper);
+}
+
+.side-nav button.active {
+    color: var(--red);
+    border-color: #f0c5c1;
+    background: #fff5f3;
+}
+
+.sidebar .account {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 7px;
+}
+
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.project-card {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border-top: 3px solid var(--ink);
+}
+
+.project-card > .actions,
+.project-card > button {
+    margin-top: auto;
+}
+
+.project-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.project-card-head h2 {
+    margin: 0 0 5px;
+    font-size: 18px;
+}
+
+.project-card-head .eyebrow {
+    margin-bottom: 8px;
+}
+
+.project-card-head p {
+    margin: 0;
+    font-size: 11px;
+}
+
+.progress-block {
+    min-width: 190px;
+}
+
+.progress-block > div:first-child {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.progress-block strong {
+    color: var(--ink);
+    font-size: 15px;
+}
+
+.progress-track {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: #e9edee;
+}
+
+.progress-track span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--red), #ef6a58);
+    transition: width .25s ease;
+}
+
+.project-facts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 18px;
+    margin: 0;
+}
+
+.project-facts div {
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+}
+
+.project-facts dt {
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .7px;
+    text-transform: uppercase;
+}
+
+.project-facts dd {
+    margin: 3px 0 0;
+    font-size: 12px;
+}
+
+#workspace-dialog {
+    max-width: 980px;
+    width: calc(100% - 34px);
+}
+
+.project-dialog-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(230px, .6fr);
+    align-items: center;
+    gap: 30px;
+    padding: 18px;
+    margin-bottom: 18px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--paper);
+}
+
+.project-dialog-summary > div:first-child {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.project-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 22px;
+}
+
+.project-detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
+    gap: 18px;
+}
+
+.detail-section {
+    padding: 20px;
+    margin-bottom: 18px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+
+.detail-section > h3 {
+    margin-bottom: 20px;
+}
+
+.timeline-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.timeline-heading h3 {
+    margin: 0;
+}
+
+.file-list,
+.update-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.file-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.file-list li:last-child {
+    border-bottom: 0;
+}
+
+.file-list strong,
+.file-list span {
+    display: block;
+    overflow-wrap: anywhere;
+}
+
+.file-list strong {
+    font-size: 12px;
+}
+
+.file-list span {
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.update-list li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 13px minmax(0, 1fr);
+    gap: 14px;
+    padding: 0 0 22px;
+}
+
+.update-list li:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 13px;
+    bottom: 0;
+    width: 1px;
+    background: var(--line);
+}
+
+.update-dot {
+    position: relative;
+    z-index: 1;
+    width: 13px;
+    height: 13px;
+    margin-top: 4px;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 0 1px #e7aaa4;
+}
+
+.update-list p {
+    margin: 7px 0;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: pre-wrap;
+}
+
 @media (max-width: 900px) {
     .dashboard-metrics {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -200,9 +548,35 @@
     .overview-head {
         align-items: flex-start;
     }
+
+    .project-grid,
+    .project-detail-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 560px) {
+    .login-layout {
+        width: 100%;
+    }
+
+    .login-card {
+        width: 100%;
+    }
+
+    .workspace-header {
+        gap: 10px;
+        padding-inline: 16px;
+    }
+
+    .workspace-header nav {
+        gap: 10px;
+    }
+
+    .workspace-header nav a:last-child {
+        display: none;
+    }
+
     .overview-head {
         display: block;
     }
@@ -235,4 +609,52 @@
     .page-heading > a {
         width: 100%;
     }
+
+    .account-summary {
+        min-width: 200px;
+    }
+
+    .side-nav {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+
+    .side-nav-group {
+        display: flex;
+        flex: 0 0 auto;
+    }
+
+    .side-nav-group > span {
+        display: none;
+    }
+
+    .side-nav button {
+        white-space: nowrap;
+    }
+
+    .sidebar .account {
+        display: flex;
+        flex: 0 0 auto;
+    }
+
+    .project-dialog-summary {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .file-list li {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    #workspace-dialog {
+        padding: 18px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .spinner { animation: none; }
+    .progress-track span { transition: none; }
 }

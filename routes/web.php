@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AdminArticleController;
 use App\Http\Controllers\AdminCompanyProfileController;
 use App\Http\Controllers\AdminDashboardController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\AdminInquiryController;
 use App\Http\Controllers\AdminMilestoneController;
 use App\Http\Controllers\AdminPortfolioController;
 use App\Http\Controllers\AdminProjectController;
+use App\Http\Controllers\AdminProjectUpdateController;
 use App\Http\Controllers\AdminServiceController;
 use App\Http\Controllers\AdminServicePackageController;
 use App\Http\Controllers\AdminUserController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\ClientProjectController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\InquiryController;
 use App\Http\Controllers\PortfolioController;
+use App\Http\Controllers\ProjectFileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -31,9 +34,13 @@ Route::prefix('api')->group(function () {
     Route::get('/articles', [ContentController::class, 'articles']);
     Route::get('/articles/{slug}', [ContentController::class, 'article']);
     Route::post('/inquiries', [InquiryController::class, 'store'])->middleware('throttle:5,1');
-    Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+    Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth');
+    Route::put('/account/password', [AccountController::class, 'changePassword'])->middleware(['auth', 'throttle:6,1']);
+    Route::get('/project-files/{attachment}/download', [ProjectFileController::class, 'download'])
+        ->middleware(['auth', 'throttle:30,1'])
+        ->name('project-files.download');
 
     Route::middleware(['auth', 'role:admin,staff'])->prefix('admin')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index']);
@@ -49,11 +56,16 @@ Route::prefix('api')->group(function () {
         Route::get('/projects', [AdminProjectController::class, 'index']);
         Route::get('/clients', [AdminProjectController::class, 'clients']);
         Route::post('/projects', [AdminProjectController::class, 'store']);
+        Route::get('/projects/{project}', [AdminProjectController::class, 'show']);
         Route::put('/projects/{project}', [AdminProjectController::class, 'update']);
         Route::delete('/projects/{project}', [AdminProjectController::class, 'destroy']);
+        Route::post('/projects/{project}/updates', [AdminProjectUpdateController::class, 'store']);
         Route::get('/projects/{project}/milestones', [AdminMilestoneController::class, 'index']);
         Route::post('/projects/{project}/milestones', [AdminMilestoneController::class, 'store']);
         Route::put('/projects/{project}/milestones/{milestone}', [AdminMilestoneController::class, 'update']);
+        Route::get('/projects/{project}/attachments', [ProjectFileController::class, 'index']);
+        Route::post('/projects/{project}/attachments', [ProjectFileController::class, 'store']);
+        Route::delete('/projects/{project}/attachments/{attachment}', [ProjectFileController::class, 'destroy']);
     });
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
         Route::get('/users', [AdminUserController::class, 'index']);

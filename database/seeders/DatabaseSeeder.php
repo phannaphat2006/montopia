@@ -79,6 +79,10 @@ class DatabaseSeeder extends Seeder
             );
         }
 
+        if (app()->environment('local')) {
+            $this->call(DemoBusinessSeeder::class);
+        }
+
         // Production accounts are created explicitly with monstopia:create-admin.
     }
 }

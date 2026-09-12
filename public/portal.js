@@ -6,12 +6,35 @@ document.addEventListener('DOMContentLoaded', () => {
     let user = null;
     let active = 'overview';
 
+    const projectStatuses = [
+        ['planned', 'รอเริ่ม'],
+        ['in_progress', 'กำลังทำ'],
+        ['review', 'รอตรวจ'],
+        ['completed', 'เสร็จแล้ว'],
+        ['archived', 'เก็บถาวร'],
+    ];
+    const milestoneStatuses = [
+        ['pending', 'รอเริ่ม'],
+        ['in_progress', 'กำลังทำ'],
+        ['delivered', 'ส่งให้ตรวจ'],
+        ['approved', 'อนุมัติแล้ว'],
+    ];
+    const statusLabels = Object.fromEntries([
+        ...projectStatuses,
+        ...milestoneStatuses,
+        ['contacted', 'ติดต่อแล้ว'],
+        ['accepted', 'รับดำเนินงาน'],
+        ['rejected', 'ไม่รับดำเนินงาน'],
+        ['admin', 'ผู้ดูแลระบบ'],
+        ['staff', 'ทีมงาน'],
+        ['client', 'ลูกค้า'],
+    ]);
+
     const el = (tag, props = {}, ...children) => {
         const node = document.createElement(tag);
         for (const [key, value] of Object.entries(props)) {
             if (key === 'class') node.className = value;
             else if (key.startsWith('on')) node.addEventListener(key.slice(2).toLowerCase(), value);
-            else if (key === 'text') node.textContent = value;
             else if (value !== undefined && value !== null) node.setAttribute(key, value);
         }
         for (const child of children.flat(Infinity)) {
@@ -21,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const button = (text, onClick, classes = '') => el('button', { type: 'button', class: classes, onClick }, text);
-    const badge = (text, status = '') => el('span', { class: `badge ${status}` }, text);
+    const badge = (status, classes = status) => el('span', { class: `badge ${classes}` }, statusLabels[status] || status);
     const arrowIcon = () => el('span', { class: 'icon-arrow', 'aria-hidden': 'true' });
     const publishedBadge = value => badge(value ? 'เผยแพร่' : 'ซ่อน', value ? 'approved' : 'draft');
     const yesNoOptions = [['1', 'เผยแพร่'], ['0', 'ซ่อนจากหน้าเว็บไซต์']];
@@ -42,9 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function api(url, options = {}) {
         const method = options.method || 'GET';
+        const isFormData = options.body instanceof FormData;
         const headers = {
             Accept: 'application/json',
-            ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+            ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
             ...(method !== 'GET' ? { 'X-CSRF-TOKEN': await token() } : {}),
             ...options.headers,
         };
@@ -62,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (type === 'textarea') {
             input = el('textarea', { name, required: required ? '' : null, maxlength: 30000, rows: 5 });
         } else {
-            input = el('input', { name, type, required: required ? '' : null, maxlength: ['number', 'date', 'datetime-local'].includes(type) ? null : 255 });
+            input = el('input', { name, type, required: required ? '' : null, maxlength: ['number', 'date', 'datetime-local', 'file'].includes(type) ? null : 255 });
         }
         return el('label', { class: 'field' }, label, input);
     }
@@ -79,31 +103,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function openForm(title, fields, submit, values = null) {
+    function showDialog(...content) {
+        dialog.replaceChildren(...content);
+        if (!dialog.open) dialog.showModal();
+    }
+
+    function openForm(title, fields, submit, values = null, afterSave = renderDashboard) {
         const form = el('form');
         const error = el('p', { class: 'form-error', role: 'alert' });
-        for (const item of fields) form.append(field(...item));
+        fields.forEach(item => form.append(field(...item)));
         const save = el('button', { type: 'submit', class: 'primary' }, 'บันทึกข้อมูล');
         form.append(error, el('div', { class: 'actions' }, button('ยกเลิก', () => dialog.close()), save));
         form.addEventListener('submit', async event => {
             event.preventDefault();
             save.disabled = true;
+            save.textContent = 'กำลังบันทึก…';
             error.textContent = '';
-            const data = Object.fromEntries(new FormData(form));
             try {
-                await submit(data);
+                const result = await submit(Object.fromEntries(new FormData(form)));
                 dialog.close();
                 flash('บันทึกข้อมูลเรียบร้อย');
-                await renderDashboard();
+                await afterSave(result);
             } catch (problem) {
                 error.textContent = problem.message;
             } finally {
                 save.disabled = false;
+                save.textContent = 'บันทึกข้อมูล';
             }
         });
-        dialog.replaceChildren(el('header', {}, el('h2', {}, title), button('ปิด ×', () => dialog.close(), 'small')), form);
+        showDialog(el('header', {}, el('h2', {}, title), button('ปิด ×', () => dialog.close(), 'small')), form);
         fillForm(values);
-        dialog.showModal();
     }
 
     async function removeRecord(url, label) {
@@ -125,29 +154,113 @@ document.addEventListener('DOMContentLoaded', () => {
         form.addEventListener('submit', async event => {
             event.preventDefault();
             submit.disabled = true;
+            submit.textContent = 'กำลังตรวจสอบ…';
+            error.textContent = '';
             try {
                 user = (await api('/api/auth/login', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(form))) })).user;
                 active = user.role === 'client' ? 'projects' : 'overview';
-                renderDashboard();
+                user.must_change_password ? passwordGate() : renderDashboard();
             } catch (problem) {
                 error.textContent = problem.message;
             } finally {
                 submit.disabled = false;
+                submit.textContent = 'เข้าสู่ระบบ';
             }
         });
         root.replaceChildren(el('div', { class: 'login-layout' },
-            el('section', { class: 'login-intro' }, el('p', { class: 'eyebrow' }, 'MONSTOPIA INFORMATION SYSTEM'), el('h1', {}, 'จัดการเนื้อหาและติดตามโครงการ', el('br'), 'จากข้อมูลชุดเดียวกัน'), el('p', { class: 'muted' }, 'ระบบหลังบ้านสำหรับผู้ดูแลและทีมงาน พร้อม Client Workspace สำหรับลูกค้าที่ได้รับบัญชี')),
-            el('section', { class: 'panel login-card' }, el('p', { class: 'eyebrow' }, 'SECURE ACCESS'), el('h2', {}, 'เข้าสู่ระบบ'), el('p', { class: 'muted' }, 'ใช้บัญชีที่ผู้ดูแลระบบสร้างให้ ไม่มีระบบสมัครสมาชิกสาธารณะ'), form, el('p', { class: 'caption' }, 'ระบบตรวจสิทธิ์ทุกคำขอจากฝั่ง Laravel'))
+            el('section', { class: 'login-intro' }, el('p', { class: 'eyebrow' }, 'MONSTOPIA INFORMATION SYSTEM'), el('h1', {}, 'จัดการงานตั้งแต่รับบรีฟ', el('br'), 'จนถึงส่งมอบโครงการ'), el('p', { class: 'muted' }, 'พื้นที่ทำงานสำหรับผู้ดูแล ทีมงาน และลูกค้า โดยทุกบัญชีเห็นข้อมูลตามสิทธิ์ของตนเอง')),
+            el('section', { class: 'panel login-card' }, el('p', { class: 'eyebrow' }, 'SECURE ACCESS'), el('h2', {}, 'เข้าสู่ระบบ'), el('p', { class: 'muted' }, 'ใช้บัญชีที่ผู้ดูแลระบบสร้างให้ ไม่มีระบบสมัครสมาชิกสาธารณะ'), form, el('p', { class: 'caption' }, 'ระบบจำกัดการลองรหัสผ่านผิดและตรวจสิทธิ์ทุก API จาก Laravel'))
         ));
+    }
+
+    function passwordFields() {
+        return [
+            field('current_password', 'รหัสผ่านปัจจุบัน', 'password'),
+            field('password', 'รหัสผ่านใหม่อย่างน้อย 12 ตัว มีตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก และตัวเลข', 'password'),
+            field('password_confirmation', 'ยืนยันรหัสผ่านใหม่', 'password'),
+        ];
+    }
+
+    function passwordGate() {
+        const form = el('form', {}, ...passwordFields());
+        const error = el('p', { class: 'form-error', role: 'alert' });
+        const save = el('button', { type: 'submit', class: 'primary' }, 'ตั้งรหัสผ่านใหม่');
+        form.append(error, el('div', { class: 'actions password-gate-actions' }, button('ออกจากระบบ', logout), save));
+        form.addEventListener('submit', async event => {
+            event.preventDefault();
+            save.disabled = true;
+            error.textContent = '';
+            try {
+                await api('/api/account/password', { method: 'PUT', body: JSON.stringify(Object.fromEntries(new FormData(form))) });
+                user.must_change_password = false;
+                flash('ตั้งรหัสผ่านใหม่เรียบร้อย');
+                renderDashboard();
+            } catch (problem) {
+                error.textContent = problem.message;
+            } finally {
+                save.disabled = false;
+            }
+        });
+        root.replaceChildren(el('div', { class: 'login-layout single-gate' },
+            el('section', { class: 'login-intro' }, el('p', { class: 'eyebrow' }, 'FIRST SIGN IN'), el('h1', {}, 'ตั้งรหัสผ่านของคุณ', el('br'), 'ก่อนเริ่มใช้งาน'), el('p', { class: 'muted' }, 'รหัสผ่านชั่วคราวใช้สำหรับเข้าสู่ระบบครั้งแรกเท่านั้น')),
+            el('section', { class: 'panel login-card' }, el('h2', {}, 'เปลี่ยนรหัสผ่าน'), form)
+        ));
+    }
+
+    function changePasswordDialog() {
+        const form = el('form', {}, ...passwordFields());
+        const error = el('p', { class: 'form-error', role: 'alert' });
+        const save = el('button', { type: 'submit', class: 'primary' }, 'เปลี่ยนรหัสผ่าน');
+        form.append(error, el('div', { class: 'actions' }, button('ยกเลิก', () => dialog.close()), save));
+        form.addEventListener('submit', async event => {
+            event.preventDefault();
+            save.disabled = true;
+            error.textContent = '';
+            try {
+                await api('/api/account/password', { method: 'PUT', body: JSON.stringify(Object.fromEntries(new FormData(form))) });
+                dialog.close();
+                flash('เปลี่ยนรหัสผ่านเรียบร้อย');
+            } catch (problem) {
+                error.textContent = problem.message;
+            } finally {
+                save.disabled = false;
+            }
+        });
+        showDialog(el('header', {}, el('h2', {}, 'เปลี่ยนรหัสผ่าน'), button('ปิด ×', () => dialog.close(), 'small')), form);
     }
 
     async function logout() {
         try { await api('/api/auth/logout', { method: 'POST' }); } finally { user = null; csrf = ''; login(); }
     }
 
+    const adminTabs = [
+        ['overview', 'ภาพรวม', 'งานประจำ'],
+        ['inquiries', 'บรีฟลูกค้า', 'งานประจำ'],
+        ['projects', 'โครงการ', 'งานประจำ'],
+        ['users', 'ผู้ใช้งาน', 'งานประจำ'],
+        ['company', 'ข้อมูลบริษัท', 'เว็บไซต์'],
+        ['services', 'บริการ', 'เว็บไซต์'],
+        ['packages', 'แพ็กเกจ', 'เว็บไซต์'],
+        ['portfolios', 'ผลงาน', 'เว็บไซต์'],
+        ['articles', 'บทความ', 'เว็บไซต์'],
+    ];
+
+    function navigation() {
+        if (user.role === 'client') return null;
+        const allowed = adminTabs.filter(([key]) => user.role === 'admin' || key !== 'users');
+        const groups = [...new Set(allowed.map(([, , group]) => group))];
+        return el('nav', { class: 'side-nav', 'aria-label': 'เมนูระบบหลังบ้าน' }, groups.map(group =>
+            el('div', { class: 'side-nav-group' }, el('span', {}, group), allowed.filter(([, , itemGroup]) => itemGroup === group).map(([key, label]) => button(label, () => goTo(key), active === key ? 'active' : '')))
+        ));
+    }
+
     function shell(content) {
         return el('div', { class: 'workspace-shell' },
-            el('aside', { class: 'sidebar' }, el('p', { class: 'eyebrow' }, 'ACCOUNT'), el('strong', {}, user.name), el('p', { class: 'caption' }, user.email, el('br'), user.role.toUpperCase()), el('div', { class: 'account' }, button('ออกจากระบบ', logout, 'small'))),
+            el('aside', { class: 'sidebar' },
+                el('div', { class: 'account-summary' }, el('p', { class: 'eyebrow' }, 'ACCOUNT'), el('strong', {}, user.name), el('p', { class: 'caption' }, user.email, el('br'), statusLabels[user.role] || user.role)),
+                navigation(),
+                el('div', { class: 'account' }, button('เปลี่ยนรหัสผ่าน', changePasswordDialog, 'small'), button('ออกจากระบบ', logout, 'small'))
+            ),
             content
         );
     }
@@ -169,28 +282,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function renderDashboard() {
-        root.replaceChildren(el('p', { class: 'loading' }, 'กำลังโหลดข้อมูลล่าสุด…'));
+        root.replaceChildren(el('div', { class: 'loading-state', role: 'status' }, el('span', { class: 'spinner', 'aria-hidden': 'true' }), el('p', {}, 'กำลังโหลดข้อมูลล่าสุด…')));
         try {
             if (user.role === 'client') {
-                const projects = (await api('/api/client/projects')).data;
-                root.replaceChildren(shell(el('section', { class: 'main-content' },
-                    el('div', { class: 'page-heading' }, el('div', {}, el('p', { class: 'eyebrow' }, 'CLIENT WORKSPACE'), el('h1', {}, 'ความคืบหน้าโครงการของคุณ'), el('p', { class: 'muted' }, `ข้อมูลโครงการของบัญชี ${user.email}`))),
-                    projects.length ? el('div', { class: 'request-grid' }, projects.map(project => row(project.project_name, `เริ่ม ${date(project.start_date)} · ${project.milestones.length} งวดงาน`, badge(project.status, project.status), [button('ดู Milestone', () => showMilestones(project), 'small')]))) : el('div', { class: 'panel empty' }, 'ยังไม่มีโครงการที่ผูกกับบัญชีนี้')
-                )));
+                await renderClientWorkspace();
                 return;
             }
-
-            const tabs = [
-                ['overview', 'ภาพรวม'], ['projects', 'โครงการ'], ['inquiries', 'บรีฟลูกค้า'], ['company', 'ข้อมูลบริษัท'],
-                ['services', 'บริการ'], ['packages', 'แพ็กเกจ'], ['portfolios', 'ผลงาน'], ['articles', 'ข่าวสาร'],
-                ...(user.role === 'admin' ? [['users', 'ผู้ใช้งาน']] : []),
-            ];
-            const nav = el('nav', { class: 'content-tabs', 'aria-label': 'เมนูระบบหลังบ้าน' }, tabs.map(([key, label]) => button(label, () => goTo(key), active === key ? 'active' : '')));
             const views = { overview: overviewView, projects: projectsView, inquiries: inquiriesView, company: companyView, services: servicesView, packages: packagesView, portfolios: portfoliosView, articles: articlesView, users: usersView };
             const content = await (views[active] || overviewView)();
             root.replaceChildren(shell(el('section', { class: 'main-content' },
-                el('div', { class: 'page-heading' }, el('div', {}, el('p', { class: 'eyebrow' }, 'CONTENT & OPERATIONS'), el('h1', {}, 'ระบบบริหารเว็บไซต์ MONSTOPIA'), el('p', { class: 'muted' }, `เข้าสู่ระบบในฐานะ ${user.role}`)), el('a', { class: 'button small', href: '/', target: '_blank', rel: 'noopener' }, 'ดูหน้าเว็บไซต์', arrowIcon())),
-                nav,
+                el('div', { class: 'page-heading' }, el('div', {}, el('p', { class: 'eyebrow' }, 'PROJECT OPERATIONS'), el('h1', {}, 'ระบบบริหาร MONSTOPIA'), el('p', { class: 'muted' }, 'รับบรีฟ ดูแลลูกค้า และติดตามการส่งมอบจากที่เดียว')), el('a', { class: 'button small', href: '/', target: '_blank', rel: 'noopener' }, 'ดูหน้าเว็บไซต์', arrowIcon())),
                 content
             )));
         } catch (problem) {
@@ -198,16 +299,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function renderClientWorkspace() {
+        const projects = (await api('/api/client/projects')).data;
+        const content = el('section', { class: 'main-content' },
+            el('div', { class: 'page-heading' }, el('div', {}, el('p', { class: 'eyebrow' }, 'CLIENT WORKSPACE'), el('h1', {}, 'ความคืบหน้าโครงการของคุณ'), el('p', { class: 'muted' }, `แสดงเฉพาะโครงการของบัญชี ${user.email}`))),
+            projects.length ? el('div', { class: 'project-grid' }, projects.map(clientProjectCard)) : el('div', { class: 'panel empty' }, 'ยังไม่มีโครงการที่ผูกกับบัญชีนี้')
+        );
+        root.replaceChildren(shell(content));
+    }
+
+    function clientProjectCard(project) {
+        return el('article', { class: 'panel project-card' },
+            el('div', { class: 'project-card-head' }, el('div', {}, el('p', { class: 'eyebrow' }, `PROJECT #${String(project.id).padStart(4, '0')}`), el('h2', {}, project.project_name)), badge(project.status)),
+            progressMeter(project.progress_percent),
+            el('dl', { class: 'project-facts' }, fact('เริ่มงาน', date(project.start_date)), fact('กำหนดส่ง', date(project.end_date)), fact('Milestone', `${project.milestones.length} รายการ`), fact('ไฟล์งาน', `${project.attachments.length} ไฟล์`)),
+            button('ดูรายละเอียดโครงการ', () => showClientProject(project), 'primary')
+        );
+    }
+
     async function overviewView() {
         const data = (await api('/api/admin/dashboard')).data;
-        const metrics = [['โครงการที่กำลังทำ', data.projects, 'projects'], ['บรีฟที่รอติดต่อ', data.pending_inquiries, 'inquiries'], ['บริการ', data.services, 'services'], ['แพ็กเกจ', data.packages, 'packages'], ['ผลงาน', data.portfolios, 'portfolios'], ['ข่าวที่เผยแพร่', data.published_articles, 'articles']];
-        const setupComplete = [data.company_profiles, data.services, data.packages, data.portfolios].filter(Boolean).length;
+        const metrics = [
+            ['บรีฟทั้งหมด', data.inquiries, 'inquiries'],
+            ['โครงการทั้งหมด', data.all_projects, 'projects'],
+            ['บัญชีลูกค้า', data.clients, 'users'],
+            ['บรีฟที่รอติดต่อ', data.pending_inquiries, 'inquiries'],
+            ['บริการบนเว็บไซต์', data.services, 'services'],
+            ['ผลงาน', data.portfolios, 'portfolios'],
+        ];
         return el('section', {},
-            el('div', { class: 'overview-head panel' }, el('div', {}, el('p', { class: 'eyebrow' }, 'WEBSITE READINESS'), el('h2', {}, 'ศูนย์ควบคุมข้อมูลเว็บไซต์'), el('p', { class: 'muted' }, 'แก้ไขข้อมูลจากหลังบ้าน แล้วหน้าเว็บไซต์จะดึงข้อมูลที่เผยแพร่ไปแสดงโดยอัตโนมัติ')), el('div', { class: 'readiness' }, el('strong', {}, `${setupComplete}/4`), el('span', {}, 'หมวดหลักมีข้อมูล'))),
+            el('div', { class: 'overview-head panel' }, el('div', {}, el('p', { class: 'eyebrow' }, 'OPERATION OVERVIEW'), el('h2', {}, 'ภาพรวมการรับงานและโครงการ'), el('p', { class: 'muted' }, 'ตัวเลขสามรายการแรกคือหัวใจของระบบ: บรีฟที่เข้ามา โครงการที่เปิด และบัญชีลูกค้าที่เข้าดูงานได้')), el('div', { class: 'readiness' }, el('strong', {}, data.projects), el('span', {}, 'งานที่กำลังเดิน'))),
             el('div', { class: 'dashboard-metrics' }, metrics.map(([label, value, key]) => metricCard(label, value, key))),
             el('div', { class: 'two-columns dashboard-columns' },
-                el('section', { class: 'panel' }, el('div', { class: 'section-heading' }, el('h2', {}, 'บรีฟล่าสุด'), button('ดูทั้งหมด', () => goTo('inquiries'), 'small')), data.recent_inquiries.length ? el('ul', { class: 'activity-list' }, data.recent_inquiries.map(item => el('li', {}, el('div', {}, el('strong', {}, item.client_name), el('span', {}, item.budget_range)), badge(item.status, item.status)))) : el('p', { class: 'empty' }, 'ยังไม่มีบรีฟ')),
-                el('section', { class: 'panel' }, el('div', { class: 'section-heading' }, el('h2', {}, 'เริ่มจัดการเนื้อหา')), el('div', { class: 'quick-actions' }, button('ข้อมูลบริษัท', () => goTo('company')), button('เพิ่มบริการ', () => serviceForm()), button('เพิ่มแพ็กเกจ', () => packageForm()), button('เขียนข่าวสาร', () => articleForm())))
+                el('section', { class: 'panel' }, el('div', { class: 'section-heading' }, el('h2', {}, 'บรีฟล่าสุด'), button('ดูทั้งหมด', () => goTo('inquiries'), 'small')), data.recent_inquiries.length ? el('ul', { class: 'activity-list' }, data.recent_inquiries.map(item => el('li', {}, el('div', {}, el('strong', {}, item.client_name), el('span', {}, item.budget_range)), badge(item.status)))) : el('p', { class: 'empty' }, 'ยังไม่มีบรีฟ')),
+                el('section', { class: 'panel' }, el('div', { class: 'section-heading' }, el('h2', {}, 'ทางลัดสำหรับงานประจำ')), el('div', { class: 'quick-actions' }, button('ตรวจบรีฟใหม่', () => goTo('inquiries')), button('เปิดโครงการ', () => goTo('projects')), user.role === 'admin' ? button('สร้างบัญชีลูกค้า', () => userForm(null, { role: 'client' })) : null, button('อัปเดตผลงาน', () => goTo('portfolios'))))
             )
         );
     }
@@ -222,25 +347,54 @@ document.addEventListener('DOMContentLoaded', () => {
         const [projectsResponse, clientsResponse] = await Promise.all([api('/api/admin/projects'), api('/api/admin/clients')]);
         const projects = projectsResponse.data;
         const clients = clientsResponse.data;
-        const cards = projects.map(project => row(project.project_name, `${project.client_name} · ${project.client?.email || 'ยังไม่ผูกบัญชี'} · ${Number(project.total_budget).toLocaleString('th-TH')} บาท · ${project.milestones_count} งวด`, badge(project.status, project.status), [button('แก้ไข', () => projectForm(project, clients), 'small'), button('จัดการ Milestone', () => manageMilestones(project), 'small'), ...(project.status !== 'archived' ? [button('เก็บถาวร', () => archiveProject(project), 'small danger')] : [])]));
-        return el('section', {}, el('div', { class: 'section-heading' }, el('h2', {}, 'โครงการที่ตกลงดำเนินงาน'), button('+ เปิดโครงการ', () => projectForm(null, clients), 'primary small')), clients.length ? null : el('div', { class: 'note' }, 'ยังไม่มีบัญชี Client — ผู้ดูแลระบบต้องสร้างบัญชีลูกค้าก่อนเปิดโครงการ'), cards.length ? el('div', { class: 'request-grid' }, cards) : el('div', { class: 'panel empty' }, 'ยังไม่มีโครงการ'));
+        const cards = projects.map(project => el('article', { class: 'panel project-card' },
+            el('div', { class: 'project-card-head' }, el('div', {}, el('p', { class: 'eyebrow' }, project.client?.email || 'ยังไม่ผูกบัญชี'), el('h2', {}, project.project_name), el('p', { class: 'muted' }, project.client_name)), badge(project.status)),
+            progressMeter(project.progress_percent),
+            el('dl', { class: 'project-facts' }, fact('เริ่มงาน', date(project.start_date)), fact('กำหนดส่ง', date(project.end_date)), fact('งบประมาณ', `${Number(project.total_budget).toLocaleString('th-TH')} บาท`), fact('ข้อมูลส่งมอบ', `${project.milestones_count} Milestone · ${project.attachments_count} ไฟล์`)),
+            el('div', { class: 'actions' }, button('เปิดพื้นที่โครงการ', () => manageProject(project), 'primary small'), button('แก้ไขข้อมูล', () => projectForm(project, clients), 'small'), ...(project.status !== 'archived' ? [button('เก็บถาวร', () => archiveProject(project), 'small danger')] : []))
+        ));
+        return el('section', {}, el('div', { class: 'section-heading' }, el('h2', {}, 'โครงการและการส่งมอบ'), button('+ เปิดโครงการ', () => projectForm(null, clients), 'primary small')), clients.length ? null : el('div', { class: 'note' }, 'ยังไม่มีบัญชี Client — ผู้ดูแลระบบต้องสร้างบัญชีลูกค้าก่อนเปิดโครงการ'), cards.length ? el('div', { class: 'project-grid' }, cards) : el('div', { class: 'panel empty' }, 'ยังไม่มีโครงการ'));
     }
 
-    function projectForm(item, clients) {
-        const clientOptions = clients.map(client => [String(client.id), `${client.name} — ${client.email}`]);
-        openForm(item ? 'แก้ไขโครงการ' : 'เปิดโครงการใหม่', [['project_name', 'ชื่อโครงการ'], ['client_name', 'ชื่อลูกค้า'], ['client_user_id', 'บัญชีลูกค้า', 'text', clientOptions], ['inquiry_id', 'รหัสบรีฟตั้งต้น', 'number', null, false], ['total_budget', 'มูลค่าโครงการ', 'number'], ['status', 'สถานะ', 'text', [['active', 'กำลังดำเนินงาน'], ['completed', 'เสร็จสิ้น'], ['archived', 'เก็บถาวร']]], ['start_date', 'วันเริ่ม', 'date'], ['end_date', 'วันสิ้นสุด', 'date', null, false]], data => api(`/api/admin/projects${item ? `/${item.id}` : ''}`, { method: item ? 'PUT' : 'POST', body: JSON.stringify({ ...data, client_user_id: Number(data.client_user_id), inquiry_id: data.inquiry_id ? Number(data.inquiry_id) : null, total_budget: Number(data.total_budget), end_date: data.end_date || null }) }), item);
+    function projectForm(item, clients, preset = {}) {
+        const clientOptions = [['', 'เลือกบัญชีลูกค้า'], ...clients.map(client => [String(client.id), `${client.name} — ${client.email}`])];
+        const values = item || { status: 'planned', progress_percent: 0, start_date: new Date().toISOString().slice(0, 10), ...preset };
+        openForm(item ? 'แก้ไขโครงการ' : 'เปิดโครงการใหม่', [['project_name', 'ชื่อโครงการ'], ['client_name', 'ชื่อลูกค้าหรือบริษัท'], ['client_user_id', 'บัญชีลูกค้าที่จะเข้าดูโครงการ', 'text', clientOptions], ['inquiry_id', 'รหัสบรีฟตั้งต้น', 'number', null, false], ['total_budget', 'มูลค่าโครงการ', 'number'], ['status', 'สถานะโครงการ', 'text', projectStatuses.filter(([value]) => value !== 'archived')], ['progress_percent', 'เปอร์เซ็นต์ความคืบหน้า 0–100', 'number'], ['start_date', 'วันเริ่ม', 'date'], ['end_date', 'วันส่งงาน', 'date', null, false]], data => api(`/api/admin/projects${item ? `/${item.id}` : ''}`, { method: item ? 'PUT' : 'POST', body: JSON.stringify({ ...data, client_user_id: Number(data.client_user_id), inquiry_id: data.inquiry_id ? Number(data.inquiry_id) : null, total_budget: Number(data.total_budget), progress_percent: Number(data.progress_percent), end_date: data.end_date || null }) }), values);
     }
 
     async function archiveProject(project) {
-        if (!confirm(`เก็บโครงการ “${project.project_name}” เป็นรายการถาวร?`)) return;
-        await api(`/api/admin/projects/${project.id}`, { method: 'DELETE' });
-        flash('เก็บโครงการถาวรแล้ว');
-        renderDashboard();
+        if (!confirm(`เก็บโครงการ “${project.project_name}” เป็นรายการถาวร? ลูกค้าจะไม่เห็นโครงการนี้ใน Workspace`)) return;
+        try {
+            await api(`/api/admin/projects/${project.id}`, { method: 'DELETE' });
+            flash('เก็บโครงการถาวรแล้ว');
+            renderDashboard();
+        } catch (problem) {
+            flash(problem.message, true);
+        }
     }
 
     async function inquiriesView() {
-        const inquiries = (await api('/api/admin/inquiries')).data.data;
-        return section('บรีฟและรายการติดต่อ', null, null, inquiries.map(item => row(`#${String(item.id).padStart(6, '0')} · ${item.client_name}`, `${item.client_email} · ${item.client_phone}\nงบประมาณ: ${item.budget_range}\n\n${item.project_scope}`, badge(item.status, item.status), [button('ตอบกลับ', () => openForm('ตอบกลับบรีฟ', [['status', 'สถานะ', 'text', [['pending', 'รอดำเนินการ'], ['contacted', 'ติดต่อแล้ว'], ['accepted', 'รับดำเนินงาน'], ['rejected', 'ไม่รับดำเนินงาน']]], ['reply_message', 'ข้อความตอบกลับ', 'textarea']], data => api(`/api/admin/inquiries/${item.id}/reply`, { method: 'POST', body: JSON.stringify(data) }), item), 'small')])), 'ยังไม่มีบรีฟ');
+        const [inquiryResponse, clientResponse] = await Promise.all([api('/api/admin/inquiries'), api('/api/admin/clients')]);
+        const inquiries = inquiryResponse.data.data;
+        const clients = clientResponse.data;
+        const items = inquiries.map(item => {
+            const client = clients.find(candidate => candidate.email.toLowerCase() === item.client_email.toLowerCase());
+            const actions = [button('ตอบกลับลูกค้า', () => replyForm(item), 'small')];
+            if (item.project) {
+                actions.push(button('เปิดโครงการ', () => { active = 'projects'; renderDashboard(); }, 'small'));
+            } else if (!client && user.role === 'admin') {
+                actions.push(button('สร้างบัญชี Client', () => userForm(null, { name: item.client_name, email: item.client_email, phone: item.client_phone, role: 'client' }), 'small'));
+            } else if (client) {
+                actions.push(button('สร้างโครงการจากบรีฟ', () => projectForm(null, clients, { inquiry_id: item.id, client_user_id: client.id, client_name: item.client_name, project_name: `โครงการของ ${item.client_name}` }), 'primary small'));
+            }
+            const replyHistory = item.replies.length ? `\n\nตอบกลับแล้ว ${item.replies.length} ครั้ง · ล่าสุดโดย ${item.replies.at(-1)?.user?.name || 'ทีมงาน'}` : '';
+            return row(`#${String(item.id).padStart(6, '0')} · ${item.client_name}`, `${item.client_email} · ${item.client_phone}\nงบประมาณ: ${item.budget_range}\n\n${item.project_scope}${replyHistory}`, badge(item.status), actions);
+        });
+        return section('บรีฟและเส้นทางรับงาน', null, null, items, 'ยังไม่มีบรีฟจากลูกค้า');
+    }
+
+    function replyForm(item) {
+        openForm('ตอบกลับบรีฟ', [['status', 'สถานะการรับงาน', 'text', [['pending', 'รอดำเนินการ'], ['contacted', 'ติดต่อแล้ว'], ['accepted', 'รับดำเนินงาน'], ['rejected', 'ไม่รับดำเนินงาน']]], ['reply_message', 'ข้อความตอบกลับทางอีเมล', 'textarea']], data => api(`/api/admin/inquiries/${item.id}/reply`, { method: 'POST', body: JSON.stringify(data) }), item);
     }
 
     async function companyView() {
@@ -294,41 +448,139 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function usersView() {
         const users = (await api('/api/admin/users')).data;
-        return section('ผู้ใช้งานและบทบาท', 'สร้างบัญชี', () => userForm(), users.map(item => row(item.name, `${item.email}\n${item.phone || 'ไม่ระบุเบอร์โทร'}`, badge(item.role, item.role), [button('แก้ไข', () => userForm(item), 'small'), ...(item.id !== user.id ? [button('ลบ', () => removeRecord(`/api/admin/users/${item.id}`, item.name), 'small danger')] : [])])), 'ยังไม่มีผู้ใช้งาน');
+        return section('ผู้ใช้งานและสิทธิ์', 'สร้างบัญชี', () => userForm(), users.map(item => row(item.name, `${item.email}\n${item.phone || 'ไม่ระบุเบอร์โทร'}${item.last_login_at ? `\nเข้าสู่ระบบล่าสุด ${dateTime(item.last_login_at)}` : '\nยังไม่เคยเข้าสู่ระบบ'}`, el('span', { class: 'page-meta' }, badge(item.role), item.must_change_password ? badge('รอเปลี่ยนรหัสผ่าน', 'submitted') : null), [button('แก้ไข', () => userForm(item), 'small'), ...(item.id !== user.id ? [button('ลบ', () => removeRecord(`/api/admin/users/${item.id}`, item.name), 'small danger')] : [])])), 'ยังไม่มีผู้ใช้งาน');
     }
 
-    function userForm(item = null) {
-        openForm(item ? 'แก้ไขบัญชี' : 'สร้างบัญชี', [['name', 'ชื่อ'], ['email', 'อีเมล', 'email'], ['password', item ? 'รหัสผ่านใหม่ (เว้นว่างถ้าไม่เปลี่ยน)' : 'รหัสผ่านอย่างน้อย 12 ตัวอักษร', 'password', null, !item], ['role', 'บทบาท', 'text', [['client', 'Client'], ['staff', 'Staff'], ['admin', 'Administrator']]], ['phone', 'เบอร์โทร', 'tel', null, false]], data => api(`/api/admin/users${item ? `/${item.id}` : ''}`, { method: item ? 'PUT' : 'POST', body: JSON.stringify({ ...data, password: data.password || null }) }), item);
+    function userForm(item = null, preset = {}) {
+        const values = item || { role: 'client', ...preset };
+        openForm(item ? 'แก้ไขบัญชี' : 'สร้างบัญชี', [['name', 'ชื่อที่แสดง'], ['email', 'อีเมลสำหรับเข้าสู่ระบบ', 'email'], ['password', item ? 'รหัสผ่านชั่วคราวใหม่ (เว้นว่างถ้าไม่เปลี่ยน)' : 'รหัสผ่านชั่วคราวอย่างน้อย 12 ตัวอักษร', 'password', null, !item], ['role', 'บทบาท', 'text', [['client', 'ลูกค้า'], ['staff', 'ทีมงาน'], ['admin', 'ผู้ดูแลระบบ']]], ['phone', 'เบอร์โทร', 'tel', null, false]], data => api(`/api/admin/users${item ? `/${item.id}` : ''}`, { method: item ? 'PUT' : 'POST', body: JSON.stringify({ ...data, password: data.password || null }) }), values);
     }
 
-    async function manageMilestones(project) {
-        const items = (await api(`/api/admin/projects/${project.id}/milestones`)).data;
-        const timeline = items.length ? el('ol', { class: 'timeline' }, items.map(item => el('li', { class: 'timeline-item' }, el('span', { class: `timeline-dot ${item.status}` }), el('h3', {}, item.title), badge(item.status, item.status), el('p', {}, item.description || ''), el('span', { class: 'caption' }, `กำหนด ${date(item.due_date)}`), el('div', { class: 'actions' }, button('แก้ไขสถานะ', () => milestoneForm(project, item), 'small'))))) : el('p', { class: 'empty' }, 'ยังไม่มี Milestone');
-        dialog.replaceChildren(el('header', {}, el('h2', {}, 'จัดการ Milestone'), button('ปิด ×', () => dialog.close(), 'small')), el('div', {}, el('div', { class: 'section-heading' }, el('h2', {}, project.project_name), button('+ เพิ่มงวดงาน', () => milestoneForm(project), 'primary small')), timeline));
-        dialog.showModal();
+    async function manageProject(project) {
+        try {
+            const detail = (await api(`/api/admin/projects/${project.id}`)).data;
+            const milestoneList = detail.milestones.length ? el('ol', { class: 'timeline' }, detail.milestones.map(item => milestoneItem(detail, item, true))) : el('p', { class: 'empty' }, 'ยังไม่มี Milestone');
+            const files = detail.attachments.length ? el('ul', { class: 'file-list' }, detail.attachments.map(item => fileItem(detail, item, true))) : el('p', { class: 'empty' }, 'ยังไม่มีไฟล์ในโครงการ');
+            const updates = detail.updates.length ? el('ol', { class: 'update-list' }, detail.updates.map(updateItem)) : el('p', { class: 'empty' }, 'ยังไม่มีประวัติการอัปเดต');
+            showDialog(
+                el('header', {}, el('div', {}, el('p', { class: 'eyebrow' }, `PROJECT #${String(detail.id).padStart(4, '0')}`), el('h2', {}, detail.project_name)), button('ปิด ×', () => { dialog.close(); renderDashboard(); }, 'small')),
+                el('div', { class: 'project-dialog-summary' }, el('div', {}, badge(detail.status), el('span', {}, `${detail.client_name} · ${detail.client?.email || '-'}`)), progressMeter(detail.progress_percent)),
+                el('div', { class: 'project-tools' }, button('+ บันทึกความคืบหน้า', () => progressUpdateForm(detail), 'primary small'), button('+ เพิ่ม Milestone', () => milestoneForm(detail), 'small'), button('+ แนบไฟล์', () => uploadForm(detail), 'small')),
+                el('div', { class: 'project-detail-grid' },
+                    el('section', { class: 'detail-section' }, el('h3', {}, 'Milestone และกำหนดส่ง'), milestoneList),
+                    el('section', { class: 'detail-section' }, el('h3', {}, 'ไฟล์งาน'), files)
+                ),
+                el('section', { class: 'detail-section' }, el('h3', {}, 'ประวัติการอัปเดต'), updates)
+            );
+        } catch (problem) {
+            flash(problem.message, true);
+        }
+    }
+
+    function progressUpdateForm(project) {
+        openForm('บันทึกความคืบหน้า', [['title', 'หัวข้ออัปเดต'], ['body', 'รายละเอียดที่ลูกค้าควรรู้', 'textarea', null, false], ['progress_percent', 'ความคืบหน้า 0–100 (เว้นว่างถ้าไม่เปลี่ยน)', 'number', null, false], ['status', 'สถานะโครงการ', 'text', [['', 'ไม่เปลี่ยนสถานะ'], ...projectStatuses.filter(([value]) => value !== 'archived')], false], ['visible_to_client', 'การมองเห็น', 'text', [['1', 'ลูกค้าเห็นและได้รับอีเมล'], ['0', 'บันทึกภายในทีม']]]], data => api(`/api/admin/projects/${project.id}/updates`, { method: 'POST', body: JSON.stringify({ ...data, progress_percent: data.progress_percent === '' ? null : Number(data.progress_percent), status: data.status || null, visible_to_client: data.visible_to_client === '1' }) }), { progress_percent: project.progress_percent, status: '', visible_to_client: true }, () => manageProject(project));
     }
 
     function milestoneForm(project, item = null) {
-        openForm(item ? 'อัปเดต Milestone' : 'เพิ่ม Milestone', [['title', 'ชื่องวดงาน'], ['description', 'รายละเอียด', 'textarea', null, false], ['due_date', 'กำหนดส่ง', 'date'], ['status', 'สถานะ', 'text', [['pending', 'รอดำเนินการ'], ['in_progress', 'กำลังดำเนินการ'], ['delivered', 'ส่งมอบแล้ว'], ['approved', 'อนุมัติแล้ว']]]], data => api(`/api/admin/projects/${project.id}/milestones${item ? `/${item.id}` : ''}`, { method: item ? 'PUT' : 'POST', body: JSON.stringify(data) }), item);
+        openForm(item ? 'อัปเดต Milestone' : 'เพิ่ม Milestone', [['title', 'ชื่อขั้นงาน'], ['description', 'รายละเอียดสิ่งที่จะส่งมอบ', 'textarea', null, false], ['due_date', 'กำหนดส่ง', 'date'], ['status', 'สถานะ', 'text', milestoneStatuses]], data => api(`/api/admin/projects/${project.id}/milestones${item ? `/${item.id}` : ''}`, { method: item ? 'PUT' : 'POST', body: JSON.stringify(data) }), item || { status: 'pending' }, () => manageProject(project));
     }
 
-    function showMilestones(project) {
-        dialog.replaceChildren(el('header', {}, el('h2', {}, project.project_name), button('ปิด ×', () => dialog.close(), 'small')), project.milestones.length ? el('ol', { class: 'timeline' }, project.milestones.map(item => el('li', { class: 'timeline-item' }, el('span', { class: `timeline-dot ${item.status}` }), el('h3', {}, item.title), badge(item.status, item.status), el('p', {}, item.description || ''), el('span', { class: 'caption' }, `กำหนด ${date(item.due_date)}`)))) : el('p', { class: 'empty' }, 'ยังไม่มี Milestone'));
-        dialog.showModal();
+    function uploadForm(project) {
+        const form = el('form');
+        const fileField = field('file', 'เลือกไฟล์ PDF, JPG, PNG, DOCX, XLSX หรือ ZIP (ไม่เกิน 10 MB)', 'file');
+        fileField.querySelector('input').setAttribute('accept', '.pdf,.jpg,.jpeg,.png,.docx,.xlsx,.zip');
+        form.append(fileField, field('visibility', 'ผู้ที่มองเห็นไฟล์', 'text', [['client', 'ลูกค้าและทีมงาน'], ['internal', 'ทีมงานเท่านั้น']]));
+        const error = el('p', { class: 'form-error', role: 'alert' });
+        const save = el('button', { type: 'submit', class: 'primary' }, 'อัปโหลดไฟล์');
+        form.append(error, el('div', { class: 'actions' }, button('ยกเลิก', () => dialog.close()), save));
+        form.addEventListener('submit', async event => {
+            event.preventDefault();
+            save.disabled = true;
+            error.textContent = '';
+            try {
+                await api(`/api/admin/projects/${project.id}/attachments`, { method: 'POST', body: new FormData(form) });
+                dialog.close();
+                flash('อัปโหลดไฟล์เรียบร้อย');
+                await manageProject(project);
+            } catch (problem) {
+                error.textContent = problem.message;
+            } finally {
+                save.disabled = false;
+            }
+        });
+        showDialog(el('header', {}, el('h2', {}, 'แนบไฟล์งาน'), button('ปิด ×', () => dialog.close(), 'small')), form);
+    }
+
+    async function deleteAttachment(project, attachment) {
+        if (!confirm(`ยืนยันการลบไฟล์ “${attachment.original_name}”?`)) return;
+        try {
+            await api(`/api/admin/projects/${project.id}/attachments/${attachment.id}`, { method: 'DELETE' });
+            flash('ลบไฟล์เรียบร้อย');
+            await manageProject(project);
+        } catch (problem) {
+            flash(problem.message, true);
+        }
+    }
+
+    function showClientProject(project) {
+        const milestones = project.milestones.length ? el('ol', { class: 'timeline' }, project.milestones.map(item => milestoneItem(project, item, false))) : el('p', { class: 'empty' }, 'ยังไม่มี Milestone');
+        const files = project.attachments.length ? el('ul', { class: 'file-list' }, project.attachments.map(item => fileItem(project, item, false))) : el('p', { class: 'empty' }, 'ยังไม่มีไฟล์ที่ส่งให้ลูกค้า');
+        const updates = project.updates.length ? el('ol', { class: 'update-list' }, project.updates.map(updateItem)) : el('p', { class: 'empty' }, 'ยังไม่มีอัปเดตใหม่');
+        showDialog(
+            el('header', {}, el('div', {}, el('p', { class: 'eyebrow' }, 'CLIENT PROJECT'), el('h2', {}, project.project_name)), button('ปิด ×', () => dialog.close(), 'small')),
+            el('div', { class: 'project-dialog-summary' }, badge(project.status), progressMeter(project.progress_percent)),
+            el('div', { class: 'project-detail-grid' }, el('section', { class: 'detail-section' }, el('h3', {}, 'Milestone'), milestones), el('section', { class: 'detail-section' }, el('h3', {}, 'ไฟล์ส่งมอบ'), files)),
+            el('section', { class: 'detail-section' }, el('h3', {}, 'อัปเดตล่าสุด'), updates)
+        );
+    }
+
+    function milestoneItem(project, item, editable) {
+        return el('li', { class: 'timeline-item' }, el('span', { class: `timeline-dot ${item.status}` }), el('div', { class: 'timeline-heading' }, el('h3', {}, item.title), badge(item.status)), el('p', {}, item.description || 'ไม่มีรายละเอียดเพิ่มเติม'), el('span', { class: 'caption' }, `กำหนด ${date(item.due_date)}`), editable ? el('div', { class: 'actions' }, button('แก้ไข', () => milestoneForm(project, item), 'small')) : null);
+    }
+
+    function fileItem(project, item, editable) {
+        return el('li', {}, el('div', {}, el('strong', {}, item.original_name), el('span', {}, `${formatBytes(item.size_bytes)} · ${item.visibility === 'internal' ? 'ทีมงานเท่านั้น' : 'ลูกค้าเห็นได้'}`)), el('div', { class: 'actions' }, el('a', { class: 'button small', href: item.download_url }, 'ดาวน์โหลด'), editable ? button('ลบ', () => deleteAttachment(project, item), 'small danger') : null));
+    }
+
+    function updateItem(item) {
+        return el('li', {}, el('div', { class: 'update-dot', 'aria-hidden': 'true' }), el('div', {}, el('div', { class: 'timeline-heading' }, el('strong', {}, item.title), item.progress_percent !== null ? badge(`${item.progress_percent}%`, 'in_progress') : null), item.body ? el('p', {}, item.body) : null, el('span', { class: 'caption' }, `${dateTime(item.created_at)} · ${item.user?.name || 'ระบบ'}${item.visible_to_client ? '' : ' · ภายในทีม'}`)));
+    }
+
+    function progressMeter(value = 0) {
+        const percent = Math.max(0, Math.min(100, Number(value) || 0));
+        return el('div', { class: 'progress-block' }, el('div', {}, el('span', {}, 'ความคืบหน้า'), el('strong', {}, `${percent}%`)), el('div', { class: 'progress-track', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(percent) }, el('span', { style: `width:${percent}%` })));
+    }
+
+    function fact(label, value) {
+        return el('div', {}, el('dt', {}, label), el('dd', {}, value));
+    }
+
+    function formatBytes(bytes) {
+        const value = Number(bytes) || 0;
+        if (value < 1024) return `${value} B`;
+        if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+        return `${(value / (1024 * 1024)).toFixed(1)} MB`;
     }
 
     function date(value) {
-        return value ? new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium' }).format(new Date(value)) : '—';
+        if (!value) return 'ยังไม่กำหนด';
+        return new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium' }).format(new Date(value));
     }
 
     function dateTime(value) {
-        return value ? new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : 'เผยแพร่ทันที';
+        if (!value) return 'ยังไม่มีข้อมูล';
+        return new Intl.DateTimeFormat('th-TH', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
     }
 
-    (async () => {
+    (async function boot() {
         try {
             user = (await api('/api/auth/me')).user;
-            if (user) renderDashboard(); else login();
+            if (!user) {
+                login();
+                return;
+            }
+            active = user.role === 'client' ? 'projects' : 'overview';
+            user.must_change_password ? passwordGate() : renderDashboard();
         } catch {
             login();
         }

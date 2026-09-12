@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Milestone extends Model
 {
-    protected $fillable = ['project_id', 'title', 'description', 'due_date', 'status'];
+    protected $fillable = ['project_id', 'title', 'description', 'due_date', 'status', 'completed_at'];
 
     protected function casts(): array
     {
-        return ['due_date' => 'date'];
+        return ['due_date' => 'date', 'completed_at' => 'datetime'];
     }
 
     public function project()

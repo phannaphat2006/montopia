@@ -15,13 +15,14 @@ class AuthController extends Controller
             return response()->json(['message' => 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'], 422);
         }
         $request->session()->regenerate();
+        $request->user()->forceFill(['last_login_at' => now()])->save();
 
-        return response()->json(['user' => $request->user()->only('id', 'name', 'email', 'role')]);
+        return response()->json(['user' => $this->userData($request)]);
     }
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json(['user' => $request->user()?->only('id', 'name', 'email', 'role')]);
+        return response()->json(['user' => $request->user() ? $this->userData($request) : null]);
     }
 
     public function logout(Request $request): JsonResponse
@@ -31,5 +32,10 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return response()->json(['message' => 'ออกจากระบบแล้ว']);
+    }
+
+    private function userData(Request $request): array
+    {
+        return $request->user()->only('id', 'name', 'email', 'role', 'must_change_password', 'last_login_at');
     }
 }
