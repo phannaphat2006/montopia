@@ -12,6 +12,7 @@ class ProjectAttachment extends Model
         'user_id',
         'original_name',
         'stored_path',
+        'disk',
         'mime_type',
         'size_bytes',
         'visibility',
@@ -29,7 +30,7 @@ class ProjectAttachment extends Model
     protected static function booted(): void
     {
         static::deleted(function (ProjectAttachment $attachment) {
-            Storage::disk('local')->delete($attachment->getRawOriginal('stored_path'));
+            Storage::disk($attachment->disk)->delete($attachment->getRawOriginal('stored_path'));
         });
     }
 

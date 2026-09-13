@@ -25,14 +25,16 @@ class ProjectFileController extends Controller
             'visibility' => ['required', 'in:client,internal'],
         ]);
         $file = $data['file'];
+        $disk = (string) config('monstopia.project_file_disk', 'local');
         $extension = strtolower($file->getClientOriginalExtension());
-        $path = $file->storeAs("project-files/{$project->id}", Str::uuid().'.'.$extension, 'local');
+        $path = $file->storeAs("project-files/{$project->id}", Str::uuid().'.'.$extension, $disk);
         abort_unless($path, 500, 'จัดเก็บไฟล์ไม่สำเร็จ');
 
         $attachment = $project->attachments()->create([
             'user_id' => $request->user()->id,
             'original_name' => $file->getClientOriginalName(),
             'stored_path' => $path,
+            'disk' => $disk,
             'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
             'size_bytes' => $file->getSize(),
             'visibility' => $data['visibility'],
@@ -74,9 +76,10 @@ class ProjectFileController extends Controller
             && $attachment->visibility === 'client'
             && $attachment->project->client_user_id === $user->id;
         abort_unless($isTeam || $isOwner, 403);
-        abort_unless(Storage::disk('local')->exists($attachment->getRawOriginal('stored_path')), 404);
+        $disk = Storage::disk($attachment->disk);
+        abort_unless($disk->exists($attachment->getRawOriginal('stored_path')), 404);
 
-        return Storage::disk('local')->download(
+        return $disk->download(
             $attachment->getRawOriginal('stored_path'),
             $attachment->original_name,
             ['Content-Type' => $attachment->mime_type, 'X-Content-Type-Options' => 'nosniff']

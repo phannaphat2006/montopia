@@ -395,6 +395,7 @@ class SystemApiTest extends TestCase
         ], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
 
         $attachment = ProjectAttachment::findOrFail($attachmentId);
+        $this->assertSame('local', $attachment->disk);
         Storage::disk('local')->assertExists($attachment->getRawOriginal('stored_path'));
         $this->actingAs($owner)->get($attachment->download_url)->assertOk();
         $this->actingAs($otherClient)->get($attachment->download_url)->assertForbidden();

@@ -4,12 +4,14 @@
 
 ## 1. สิ่งที่ Hosting ต้องมี
 
-- PHP 8.2 ขึ้นไป พร้อม `pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `curl`
+- PHP 8.4.1 ขึ้นไป พร้อม `pdo_mysql`, `mbstring`, `openssl`, `fileinfo`, `curl`
 - MySQL 8 หรือระบบที่เข้ากันได้กับ InnoDB และ `utf8mb4`
 - Composer 2 และสิทธิ์ตั้ง Document Root เป็นโฟลเดอร์ `public`
 - Cron Job สำหรับ Laravel Scheduler
 - SSL Certificate เพื่อเปิด HTTPS
 - SMTP สำหรับส่งอีเมล และพื้นที่เก็บไฟล์ Private/Backup ที่ไม่เปิดเป็น Public URL
+
+ถ้า Hosting เป็นระบบที่สร้างเครื่องประมวลผลใหม่ได้ เช่น Laravel Cloud ให้เพิ่ม Object Storage และตั้ง `FILESYSTEM_DISK=s3` กับ `PROJECT_FILE_DISK=s3` เพื่อไม่ให้ไฟล์งานผูกกับดิสก์ชั่วคราวของเครื่องประมวลผล
 
 ## 2. ตัวแปร Production สำคัญ
 

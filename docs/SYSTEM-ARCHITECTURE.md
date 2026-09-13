@@ -122,6 +122,7 @@ erDiagram
         bigint user_id FK
         varchar original_name
         varchar stored_path
+        varchar disk
         varchar mime_type
         bigint size_bytes
         enum visibility
@@ -259,6 +260,7 @@ erDiagram
 | user_id | BIGINT UNSIGNED, FK, NULL | เจ้าหน้าที่ผู้อัปโหลด |
 | original_name | VARCHAR(255), NOT NULL | ชื่อไฟล์ที่ผู้ใช้เห็น |
 | stored_path | VARCHAR(500), UNIQUE | ที่อยู่ไฟล์ Private; ไม่ส่งผ่าน API |
+| disk | VARCHAR(40), default local | Storage disk ที่เก็บไฟล์ เช่น local หรือ s3 |
 | mime_type | VARCHAR(120), NOT NULL | ชนิดไฟล์ที่ Server ตรวจพบ |
 | size_bytes | BIGINT UNSIGNED | ขนาดไฟล์ ไม่เกินค่าที่กำหนด |
 | visibility | ENUM(client, internal), default client | Client เจ้าของโครงการดาวน์โหลดได้หรือเก็บภายใน |

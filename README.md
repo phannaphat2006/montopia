@@ -16,7 +16,7 @@
 
 ## ความต้องการระบบ
 
-- PHP 8.2 ขึ้นไป พร้อมส่วนขยาย `curl`, `fileinfo`, `mbstring`, `openssl`, `pdo_mysql`
+- PHP 8.4.1 ขึ้นไป พร้อมส่วนขยาย `curl`, `fileinfo`, `mbstring`, `openssl`, `pdo_mysql`
 - Composer 2
 - MySQL 8 หรือ MySQL-compatible server ที่รองรับ InnoDB และ `utf8mb4`
 - เว็บเซิร์ฟเวอร์ที่กำหนด Document Root ไปยังโฟลเดอร์ `public`
