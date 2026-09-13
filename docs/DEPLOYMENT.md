@@ -84,6 +84,7 @@ php artisan monstopia:backup-database
 - ใช้บัญชีฐานข้อมูลเฉพาะระบบ ไม่ใช้ `root`
 - ตรวจว่า `.env`, `storage`, Backup และไฟล์ Private เปิดผ่าน URL ตรงไม่ได้
 - เปลี่ยนรหัสผ่านชั่วคราวทุกบัญชี และลบบัญชีทดสอบ
+- ตรวจว่าบัญชีที่ยังไม่เปลี่ยนรหัสผ่านชั่วคราวถูก API ตอบกลับ `403` และเข้า Dashboard/Project ไม่ได้
 - ทดสอบ Login ผิดเกิน 5 ครั้งว่าถูกจำกัด
 - ทดสอบ Client A ว่าเปิดโครงการ/ไฟล์ของ Client B ไม่ได้
 - เปิด Log Rotation, Monitoring พื้นที่ดิสก์ และทดสอบ Restore Backup ตามรอบ

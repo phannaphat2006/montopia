@@ -408,6 +408,10 @@ class SystemApiTest extends TestCase
             'must_change_password' => true,
         ]);
 
+        $this->actingAs($client)->getJson('/api/client/projects')
+            ->assertForbidden()
+            ->assertJsonPath('message', 'กรุณาเปลี่ยนรหัสผ่านชั่วคราวก่อนใช้งานระบบ');
+
         $this->actingAs($client)->putJson('/api/account/password', [
             'current_password' => 'TemporaryPass123',
             'password' => 'NewSecurePass456',
@@ -417,6 +421,7 @@ class SystemApiTest extends TestCase
         $client->refresh();
         $this->assertFalse($client->must_change_password);
         $this->assertTrue(Hash::check('NewSecurePass456', $client->password));
+        $this->actingAs($client)->getJson('/api/client/projects')->assertOk();
     }
 
     public function test_login_is_rate_limited_per_email_and_ip(): void

@@ -39,10 +39,10 @@ Route::prefix('api')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth');
     Route::put('/account/password', [AccountController::class, 'changePassword'])->middleware(['auth', 'throttle:6,1']);
     Route::get('/project-files/{attachment}/download', [ProjectFileController::class, 'download'])
-        ->middleware(['auth', 'throttle:30,1'])
+        ->middleware(['auth', 'password.changed', 'throttle:30,1'])
         ->name('project-files.download');
 
-    Route::middleware(['auth', 'role:admin,staff'])->prefix('admin')->group(function () {
+    Route::middleware(['auth', 'password.changed', 'role:admin,staff'])->prefix('admin')->group(function () {
         Route::get('/dashboard', [AdminDashboardController::class, 'index']);
         Route::apiResource('company-profiles', AdminCompanyProfileController::class)->except('show');
         Route::apiResource('services', AdminServiceController::class)->except('show');
@@ -67,11 +67,11 @@ Route::prefix('api')->group(function () {
         Route::post('/projects/{project}/attachments', [ProjectFileController::class, 'store']);
         Route::delete('/projects/{project}/attachments/{attachment}', [ProjectFileController::class, 'destroy']);
     });
-    Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    Route::middleware(['auth', 'password.changed', 'role:admin'])->prefix('admin')->group(function () {
         Route::get('/users', [AdminUserController::class, 'index']);
         Route::post('/users', [AdminUserController::class, 'store']);
         Route::put('/users/{user}', [AdminUserController::class, 'update']);
         Route::delete('/users/{user}', [AdminUserController::class, 'destroy']);
     });
-    Route::middleware(['auth', 'role:client'])->get('/client/projects', [ClientProjectController::class, 'index']);
+    Route::middleware(['auth', 'password.changed', 'role:client'])->get('/client/projects', [ClientProjectController::class, 'index']);
 });

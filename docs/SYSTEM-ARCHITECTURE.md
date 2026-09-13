@@ -362,6 +362,7 @@ erDiagram
 - State-changing request ผ่าน CSRF middleware และ Validate Request ฝั่ง Server
 - Login และฟอร์ม Public มี rate limiting
 - Password ใช้ Laravel Hash driver `bcrypt`; บัญชีใหม่ใช้รหัสผ่านชั่วคราวและบังคับเปลี่ยนครั้งแรก
+- Middleware `password.changed` ปฏิเสธ API หลังบ้านและ Client API จนกว่าผู้ใช้จะเปลี่ยนรหัสผ่านชั่วคราว จึงไม่สามารถข้ามเงื่อนไขด้วยการเรียก API โดยตรง
 - Client query เริ่มจาก Relationship ของผู้ใช้ ไม่รับ client/project id จาก Browser
 - Nested Milestone update ตรวจว่า `milestone.project_id` ตรงกับ Project ใน URL
 - ไฟล์เก็บใน Private disk, เปลี่ยนชื่อเป็น UUID และ Download ผ่าน Controller ที่ตรวจ Role/Ownership
