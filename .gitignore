@@ -8,6 +8,7 @@
 /.runtime
 /.laravel-scaffold
 /tmp
+/output/imagegen/
 /storage/*.key
 /storage/framework/cache/*
 /storage/framework/sessions/*
