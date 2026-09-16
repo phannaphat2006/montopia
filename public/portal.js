@@ -350,16 +350,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const cards = projects.map(project => el('article', { class: 'panel project-card' },
             el('div', { class: 'project-card-head' }, el('div', {}, el('p', { class: 'eyebrow' }, project.client?.email || 'ยังไม่ผูกบัญชี'), el('h2', {}, project.project_name), el('p', { class: 'muted' }, project.client_name)), badge(project.status)),
             progressMeter(project.progress_percent),
-            el('dl', { class: 'project-facts' }, fact('เริ่มงาน', date(project.start_date)), fact('กำหนดส่ง', date(project.end_date)), fact('งบประมาณ', `${Number(project.total_budget).toLocaleString('th-TH')} บาท`), fact('ข้อมูลส่งมอบ', `${project.milestones_count} Milestone · ${project.attachments_count} ไฟล์`)),
+            el('dl', { class: 'project-facts' }, fact('เริ่มงาน', date(project.start_date)), fact('กำหนดส่ง', date(project.end_date)), fact('มูลค่าโครงการ', Number(project.total_budget) === 0 ? 'รอระบุ / 0 บาท' : `${Number(project.total_budget).toLocaleString('th-TH')} บาท`), fact('ข้อมูลส่งมอบ', `${project.milestones_count} Milestone · ${project.attachments_count} ไฟล์`)),
+            !project.client ? el('p', { class: 'note' }, 'รับงานแล้ว — ยังไม่ผูกบัญชี Client ลูกค้าจะยังไม่เห็นโครงการนี้ ให้เลือกบัญชีใน “แก้ไขข้อมูล”') : null,
             el('div', { class: 'actions' }, button('เปิดพื้นที่โครงการ', () => manageProject(project), 'primary small'), button('แก้ไขข้อมูล', () => projectForm(project, clients), 'small'), ...(project.status !== 'archived' ? [button('เก็บถาวร', () => archiveProject(project), 'small danger')] : []))
         ));
-        return el('section', {}, el('div', { class: 'section-heading' }, el('h2', {}, 'โครงการและการส่งมอบ'), button('+ เปิดโครงการ', () => projectForm(null, clients), 'primary small')), clients.length ? null : el('div', { class: 'note' }, 'ยังไม่มีบัญชี Client — ผู้ดูแลระบบต้องสร้างบัญชีลูกค้าก่อนเปิดโครงการ'), cards.length ? el('div', { class: 'project-grid' }, cards) : el('div', { class: 'panel empty' }, 'ยังไม่มีโครงการ'));
+        return el('section', {}, el('div', { class: 'section-heading' }, el('h2', {}, 'โครงการและการส่งมอบ'), button('+ เปิดโครงการ', () => projectForm(null, clients), 'primary small')), clients.length ? null : el('div', { class: 'note' }, 'เปิดโครงการได้ก่อนมีบัญชีลูกค้า — ผู้ดูแลระบบต้องสร้างและผูกบัญชี Client ก่อนลูกค้าจะเข้าดูงานได้'), cards.length ? el('div', { class: 'project-grid' }, cards) : el('div', { class: 'panel empty' }, 'ยังไม่มีโครงการ'));
     }
 
     function projectForm(item, clients, preset = {}) {
-        const clientOptions = [['', 'เลือกบัญชีลูกค้า'], ...clients.map(client => [String(client.id), `${client.name} — ${client.email}`])];
+        const clientOptions = [['', 'ยังไม่ผูกบัญชีลูกค้า'], ...clients.map(client => [String(client.id), `${client.name} — ${client.email}`])];
         const values = item || { status: 'planned', progress_percent: 0, start_date: new Date().toISOString().slice(0, 10), ...preset };
-        openForm(item ? 'แก้ไขโครงการ' : 'เปิดโครงการใหม่', [['project_name', 'ชื่อโครงการ'], ['client_name', 'ชื่อลูกค้าหรือบริษัท'], ['client_user_id', 'บัญชีลูกค้าที่จะเข้าดูโครงการ', 'text', clientOptions], ['inquiry_id', 'รหัสบรีฟตั้งต้น', 'number', null, false], ['total_budget', 'มูลค่าโครงการ', 'number'], ['status', 'สถานะโครงการ', 'text', projectStatuses.filter(([value]) => value !== 'archived')], ['progress_percent', 'เปอร์เซ็นต์ความคืบหน้า 0–100', 'number'], ['start_date', 'วันเริ่ม', 'date'], ['end_date', 'วันส่งงาน', 'date', null, false]], data => api(`/api/admin/projects${item ? `/${item.id}` : ''}`, { method: item ? 'PUT' : 'POST', body: JSON.stringify({ ...data, client_user_id: Number(data.client_user_id), inquiry_id: data.inquiry_id ? Number(data.inquiry_id) : null, total_budget: Number(data.total_budget), progress_percent: Number(data.progress_percent), end_date: data.end_date || null }) }), values);
+        openForm(item ? 'แก้ไขโครงการ' : 'เปิดโครงการใหม่', [['project_name', 'ชื่อโครงการ'], ['client_name', 'ชื่อลูกค้าหรือบริษัท'], ['client_user_id', 'บัญชีลูกค้าที่จะเข้าดูโครงการ (ผูกภายหลังได้)', 'text', clientOptions, false], ['inquiry_id', 'รหัสบรีฟตั้งต้น', 'number', null, false], ['total_budget', 'มูลค่าโครงการ (0 = รอระบุ / ไม่มีค่าใช้จ่าย)', 'number'], ['status', 'สถานะโครงการ', 'text', projectStatuses.filter(([value]) => value !== 'archived')], ['progress_percent', 'เปอร์เซ็นต์ความคืบหน้า 0–100', 'number'], ['start_date', 'วันเริ่ม (โครงการจากบรีฟตั้งต้นเป็นวันที่รับงาน)', 'date'], ['end_date', 'วันส่งงาน', 'date', null, false]], data => api(`/api/admin/projects${item ? `/${item.id}` : ''}`, { method: item ? 'PUT' : 'POST', body: JSON.stringify({ ...data, client_user_id: data.client_user_id ? Number(data.client_user_id) : null, inquiry_id: data.inquiry_id ? Number(data.inquiry_id) : null, total_budget: Number(data.total_budget), progress_percent: Number(data.progress_percent), end_date: data.end_date || null }) }), values);
     }
 
     async function archiveProject(project) {
@@ -382,11 +383,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const actions = [button('ตอบกลับลูกค้า', () => replyForm(item), 'small')];
             if (item.project) {
                 actions.push(button('เปิดโครงการ', () => { active = 'projects'; renderDashboard(); }, 'small'));
-            } else if (!client && user.role === 'admin') {
-                actions.push(button('สร้างบัญชี Client', () => userForm(null, { name: item.client_name, email: item.client_email, phone: item.client_phone, role: 'client' }), 'small'));
-            } else if (client) {
-                actions.push(button('สร้างโครงการจากบรีฟ', () => projectForm(null, clients, { inquiry_id: item.id, client_user_id: client.id, client_name: item.client_name, project_name: `โครงการของ ${item.client_name}` }), 'primary small'));
+            } else {
+                actions.push(button('รับงานและเปิดโครงการ', event => acceptInquiry(item, event.currentTarget), 'primary small'));
             }
+            if (!client && user.role === 'admin') actions.push(button('สร้างบัญชี Client', () => userForm(null, { name: item.client_name, email: item.client_email, phone: item.client_phone, role: 'client' }), 'small'));
             const replyHistory = item.replies.length ? `\n\nตอบกลับแล้ว ${item.replies.length} ครั้ง · ล่าสุดโดย ${item.replies.at(-1)?.user?.name || 'ทีมงาน'}` : '';
             return row(`#${String(item.id).padStart(6, '0')} · ${item.client_name}`, `${item.client_email} · ${item.client_phone}\nงบประมาณ: ${item.budget_range}\n\n${item.project_scope}${replyHistory}`, badge(item.status), actions);
         });
@@ -394,7 +394,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function replyForm(item) {
-        openForm('ตอบกลับบรีฟ', [['status', 'สถานะการรับงาน', 'text', [['pending', 'รอดำเนินการ'], ['contacted', 'ติดต่อแล้ว'], ['accepted', 'รับดำเนินงาน'], ['rejected', 'ไม่รับดำเนินงาน']]], ['reply_message', 'ข้อความตอบกลับทางอีเมล', 'textarea']], data => api(`/api/admin/inquiries/${item.id}/reply`, { method: 'POST', body: JSON.stringify(data) }), item);
+        openForm('ตอบกลับบรีฟ', [['status', 'สถานะการรับงาน', 'text', [['pending', 'รอดำเนินการ'], ['contacted', 'ติดต่อแล้ว'], ['accepted', 'รับงานและเปิดโครงการอัตโนมัติ'], ['rejected', 'ไม่รับดำเนินงาน']]], ['reply_message', 'ข้อความตอบกลับทางอีเมล', 'textarea']], data => api(`/api/admin/inquiries/${item.id}/reply`, { method: 'POST', body: JSON.stringify(data) }), item, async result => {
+            if (result.project_id) active = 'projects';
+            await renderDashboard();
+            if (result.project_id) flash(result.project_created ? 'รับงานแล้ว โครงการถูกสร้างในหน้าโครงการเรียบร้อย' : 'รับงานแล้ว ใช้โครงการเดิมโดยไม่สร้างซ้ำ');
+            if (!result.email_sent) flash('บันทึกสำเร็จ แต่ส่งอีเมลไม่สำเร็จ กรุณาตรวจการตั้งค่าอีเมล', true);
+        });
+    }
+
+    async function acceptInquiry(item, control) {
+        if (!confirm(`รับงานจาก “${item.client_name}” และเปิดโครงการอัตโนมัติ?\nโครงการจะรอเริ่มที่ 0% วันเริ่มตั้งต้นเป็นวันนี้ มูลค่าเริ่มต้น 0 รอระบุ และยังไม่กำหนดวันส่งงาน`)) return;
+        control.disabled = true;
+        control.textContent = 'กำลังรับงาน…';
+        try {
+            const result = await api(`/api/admin/inquiries/${item.id}/reply`, { method: 'POST', body: JSON.stringify({ status: 'accepted', reply_message: 'ทีมงานรับดำเนินงานตามบรีฟแล้ว และเปิดโครงการในระบบเพื่อเตรียมแผนงาน โดยจะประสานรายละเอียดขอบเขต งบประมาณ และกำหนดส่งงานต่อไป' }) });
+            active = 'projects';
+            await renderDashboard();
+            flash(result.project_created ? 'รับงานและเปิดโครงการเรียบร้อย ไม่ต้องสร้างโครงการซ้ำ' : 'เปิดโครงการเดิมเรียบร้อย ไม่มีการสร้างซ้ำ');
+            if (!result.email_sent) flash('รับงานและบันทึกโครงการสำเร็จ แต่ส่งอีเมลไม่สำเร็จ', true);
+        } catch (problem) {
+            flash(problem.message, true);
+        } finally {
+            control.disabled = false;
+            control.textContent = 'รับงานและเปิดโครงการ';
+        }
     }
 
     async function companyView() {

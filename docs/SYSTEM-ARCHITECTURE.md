@@ -215,7 +215,7 @@ erDiagram
 | Field | Type / Constraint | ความหมาย |
 |---|---|---|
 | inquiry_id | BIGINT UNSIGNED, UNIQUE, FK, NULL | บรีฟตั้งต้น |
-| client_user_id | BIGINT UNSIGNED, FK, NULL ในฐานข้อมูล/Required ใน API | เจ้าของโครงการที่เข้าระบบได้ |
+| client_user_id | BIGINT UNSIGNED, FK, NULL ในฐานข้อมูลและ API | เจ้าของโครงการที่เข้าระบบได้; โครงการที่ยังไม่ผูกบัญชีเห็นเฉพาะทีมงาน |
 | project_name | VARCHAR(150), NOT NULL | ชื่อโครงการ |
 | client_name | VARCHAR(100), NOT NULL | ชื่อลูกค้า/องค์กร |
 | total_budget | DECIMAL(10,2), NOT NULL | มูลค่าโครงการ; ไม่ส่งให้ Client API |
