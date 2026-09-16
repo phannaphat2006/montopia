@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\InquiryReplied;
 use App\Models\Inquiry;
+use App\Services\AcceptedInquiryProjectService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,15 +19,18 @@ class AdminInquiryController extends Controller
         return response()->json(['data' => Inquiry::with(['replies.user:id,name', 'project:id,inquiry_id,project_name'])->latest()->paginate(20)]);
     }
 
-    public function reply(Request $request, Inquiry $inquiry): JsonResponse
+    public function reply(Request $request, Inquiry $inquiry, AcceptedInquiryProjectService $projects): JsonResponse
     {
         $data = $request->validate(['reply_message' => ['required', 'string', 'max:5000'], 'status' => ['required', 'in:pending,contacted,accepted,rejected']]);
-        $reply = DB::transaction(function () use ($inquiry, $data, $request) {
+        $result = DB::transaction(function () use ($inquiry, $data, $request, $projects) {
+            $inquiry = Inquiry::query()->lockForUpdate()->findOrFail($inquiry->id);
             $reply = $inquiry->replies()->create(['user_id' => $request->user()->id, 'reply_message' => $data['reply_message'], 'sent_at' => now()]);
             $inquiry->update(['status' => $data['status']]);
+            $project = $data['status'] === 'accepted' ? $projects->ensure($inquiry, $request->user()) : null;
 
-            return $reply;
+            return ['reply' => $reply, 'project' => $project];
         });
+        $reply = $result['reply'];
         $sent = true;
         try {
             Mail::to($inquiry->client_email)->send(new InquiryReplied($inquiry->fresh(), $reply));
@@ -35,6 +39,11 @@ class AdminInquiryController extends Controller
             Log::warning('Inquiry reply email failed', ['inquiry_id' => $inquiry->id, 'exception' => $e::class]);
         }
 
-        return response()->json(['data' => $reply->load('user:id,name'), 'email_sent' => $sent], 201);
+        return response()->json([
+            'data' => $reply->load('user:id,name'),
+            'email_sent' => $sent,
+            'project_id' => $result['project']['project']->id ?? null,
+            'project_created' => $result['project']['created'] ?? false,
+        ], 201);
     }
 }

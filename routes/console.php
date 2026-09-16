@@ -10,4 +10,5 @@ Artisan::command('inspire', function () {
 
 Schedule::command('monstopia:backup-database')
     ->dailyAt('02:00')
+    ->timezone(config('monstopia.business_timezone'))
     ->withoutOverlapping();

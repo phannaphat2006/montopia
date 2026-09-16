@@ -74,6 +74,7 @@ class ProjectFileController extends Controller
         $isTeam = in_array($user->role, ['admin', 'staff'], true);
         $isOwner = $user->role === 'client'
             && $attachment->visibility === 'client'
+            && $attachment->project->status !== 'archived'
             && $attachment->project->client_user_id === $user->id;
         abort_unless($isTeam || $isOwner, 403);
         $disk = Storage::disk($attachment->disk);

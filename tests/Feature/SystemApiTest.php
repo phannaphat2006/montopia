@@ -399,6 +399,21 @@ class SystemApiTest extends TestCase
         Storage::disk('local')->assertExists($attachment->getRawOriginal('stored_path'));
         $this->actingAs($owner)->get($attachment->download_url)->assertOk();
         $this->actingAs($otherClient)->get($attachment->download_url)->assertForbidden();
+        $project->update(['status' => 'archived']);
+        $this->actingAs($owner)->get($attachment->download_url)->assertForbidden();
+        $this->actingAs($admin)->get($attachment->download_url)->assertOk();
+    }
+
+    public function test_project_uploads_reject_unsupported_and_oversized_files(): void
+    {
+        Storage::fake('local');
+        $admin = User::factory()->create(['role' => 'admin']);
+        $owner = User::factory()->create(['role' => 'client']);
+        $project = $this->projectFor($owner, 'Upload validation');
+        foreach ([UploadedFile::fake()->create('script.exe', 1, 'application/x-msdownload'), UploadedFile::fake()->create('large.pdf', 10241, 'application/pdf')] as $file) {
+            $this->actingAs($admin)->post('/api/admin/projects/'.$project->id.'/attachments', ['file' => $file, 'visibility' => 'client'], ['Accept' => 'application/json'])->assertUnprocessable();
+        }
+        $this->assertDatabaseCount('project_attachments', 0);
     }
 
     public function test_user_can_change_a_temporary_password(): void
