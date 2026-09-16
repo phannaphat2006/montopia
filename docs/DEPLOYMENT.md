@@ -62,7 +62,9 @@ php artisan monstopia:create-admin admin@example.com --name="Administrator" --ge
 * * * * * cd /path/to/monstopia && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-ระบบสำรองฐานข้อมูลเวลา 02:00 ทุกวัน เก็บไฟล์ที่ `storage/app/private/backups` และลบไฟล์เก่าตาม `MONSTOPIA_BACKUP_RETENTION_DAYS` ควรคัดลอก Backup เข้าพื้นที่อีกเครื่องหรือ Object Storage ที่เข้ารหัสด้วย เพราะ Backup ที่อยู่ Server เดียวกันไม่ช่วยเมื่อดิสก์เสีย
+ระบบสำรองฐานข้อมูลเวลา 02:00 ตามเขตเวลา `MONSTOPIA_BUSINESS_TIMEZONE` (ค่าเริ่มต้น Asia/Bangkok) ทุกวัน เก็บไฟล์ที่ `storage/app/private/backups` และลบไฟล์เก่าตาม `BACKUP_RETENTION_DAYS` ควรคัดลอก Backup เข้าพื้นที่อีกเครื่องหรือ Object Storage ที่เข้ารหัสด้วย เพราะ Backup ที่อยู่ Server เดียวกันไม่ช่วยเมื่อดิสก์เสีย
+
+ไฟล์ SQL สำรองรายการและข้อมูลในฐานข้อมูล ไม่รวมเนื้อไฟล์แนบใน Private Storage จึงต้องสำรอง Private Storage แยกด้วย การตั้ง Scheduler อย่างเดียวไม่ทำให้เกิด Backup หากยังไม่มี Cron/ตัวเรียก Scheduler ทำงานจริง
 
 ทดสอบก่อนเปิดระบบจริง:
 

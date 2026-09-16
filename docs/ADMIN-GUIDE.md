@@ -87,7 +87,7 @@ D:\motopia\.runtime\php\php.exe artisan monstopia:create-admin admin@example.com
 D:\motopia\.runtime\php\php.exe artisan monstopia:backup-database
 ```
 
-ไฟล์ `.sql.gz` อยู่ใน `storage/app/private/backups` และไม่ถูก Commit ขึ้น Git งาน Production ต้องตั้ง Cron ให้ `php artisan schedule:run` ทำงานทุกนาที เพื่อให้ Laravel เรียก Backup รายวันตามกำหนด
+ไฟล์ `.sql.gz` อยู่ใน `storage/app/private/backups` และไม่ถูก Commit ขึ้น Git งาน Production ต้องตั้ง Cron ให้ `php artisan schedule:run` ทำงานทุกนาที เพื่อให้ Laravel เรียก Backup รายวันเวลา 02:00 ตามเวลาไทย ไม่ใช่เพียงเปิดหน้าเว็บแล้ว Backup จะทำงานเอง ต้องสำรองเนื้อไฟล์งานใน Private Storage แยกจาก SQL ด้วย
 
 ## 10. ก่อนใช้งานจริงบนอินเทอร์เน็ต
 

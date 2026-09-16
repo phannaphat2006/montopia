@@ -30,7 +30,7 @@ class AcceptedInquiryProjectService
                 'total_budget' => 0,
                 'status' => 'planned',
                 'progress_percent' => 0,
-                'start_date' => today()->toDateString(),
+                'start_date' => now(config('monstopia.business_timezone'))->toDateString(),
                 'end_date' => null,
                 'updated_by' => $actor?->id,
             ]);

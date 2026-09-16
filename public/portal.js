@@ -108,6 +108,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dialog.open) dialog.showModal();
     }
 
+    function askConfirmation(title, message, confirmLabel = 'ยืนยัน') {
+        return new Promise(resolve => {
+            let settled = false;
+            const finish = confirmed => {
+                if (settled) return;
+                settled = true;
+                dialog.removeEventListener('close', onClose);
+                dialog.close();
+                resolve(confirmed);
+            };
+            const onClose = () => finish(false);
+            showDialog(el('header', {}, el('h2', {}, title)), el('p', { class: 'note' }, message),
+                el('div', { class: 'actions' }, button('ยกเลิก', () => finish(false)), button(confirmLabel, () => finish(true), 'primary')));
+            dialog.addEventListener('close', onClose, { once: true });
+        });
+    }
+
     function openForm(title, fields, submit, values = null, afterSave = renderDashboard) {
         const form = el('form');
         const error = el('p', { class: 'form-error', role: 'alert' });
@@ -136,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function removeRecord(url, label) {
-        if (!confirm(`ยืนยันการลบ “${label}” ออกจากระบบ?`)) return;
+        if (!await askConfirmation('ยืนยันการลบข้อมูล', `ยืนยันการลบ “${label}” ออกจากระบบ?`, 'ยืนยันการลบ')) return;
         try {
             await api(url, { method: 'DELETE' });
             flash('ลบข้อมูลเรียบร้อย');
@@ -359,12 +376,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function projectForm(item, clients, preset = {}) {
         const clientOptions = [['', 'ยังไม่ผูกบัญชีลูกค้า'], ...clients.map(client => [String(client.id), `${client.name} — ${client.email}`])];
-        const values = item || { status: 'planned', progress_percent: 0, start_date: new Date().toISOString().slice(0, 10), ...preset };
+        const values = item || { status: 'planned', progress_percent: 0, start_date: new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Bangkok' }).format(new Date()), ...preset };
         openForm(item ? 'แก้ไขโครงการ' : 'เปิดโครงการใหม่', [['project_name', 'ชื่อโครงการ'], ['client_name', 'ชื่อลูกค้าหรือบริษัท'], ['client_user_id', 'บัญชีลูกค้าที่จะเข้าดูโครงการ (ผูกภายหลังได้)', 'text', clientOptions, false], ['inquiry_id', 'รหัสบรีฟตั้งต้น', 'number', null, false], ['total_budget', 'มูลค่าโครงการ (0 = รอระบุ / ไม่มีค่าใช้จ่าย)', 'number'], ['status', 'สถานะโครงการ', 'text', projectStatuses.filter(([value]) => value !== 'archived')], ['progress_percent', 'เปอร์เซ็นต์ความคืบหน้า 0–100', 'number'], ['start_date', 'วันเริ่ม (โครงการจากบรีฟตั้งต้นเป็นวันที่รับงาน)', 'date'], ['end_date', 'วันส่งงาน', 'date', null, false]], data => api(`/api/admin/projects${item ? `/${item.id}` : ''}`, { method: item ? 'PUT' : 'POST', body: JSON.stringify({ ...data, client_user_id: data.client_user_id ? Number(data.client_user_id) : null, inquiry_id: data.inquiry_id ? Number(data.inquiry_id) : null, total_budget: Number(data.total_budget), progress_percent: Number(data.progress_percent), end_date: data.end_date || null }) }), values);
     }
 
     async function archiveProject(project) {
-        if (!confirm(`เก็บโครงการ “${project.project_name}” เป็นรายการถาวร? ลูกค้าจะไม่เห็นโครงการนี้ใน Workspace`)) return;
+        if (!await askConfirmation('เก็บโครงการถาวร', `เก็บโครงการ “${project.project_name}” เป็นรายการถาวร? ลูกค้าจะไม่เห็นโครงการนี้ใน Workspace`, 'ยืนยันเก็บถาวร')) return;
         try {
             await api(`/api/admin/projects/${project.id}`, { method: 'DELETE' });
             flash('เก็บโครงการถาวรแล้ว');
@@ -403,7 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function acceptInquiry(item, control) {
-        if (!confirm(`รับงานจาก “${item.client_name}” และเปิดโครงการอัตโนมัติ?\nโครงการจะรอเริ่มที่ 0% วันเริ่มตั้งต้นเป็นวันนี้ มูลค่าเริ่มต้น 0 รอระบุ และยังไม่กำหนดวันส่งงาน`)) return;
+        if (!await askConfirmation('ยืนยันรับงาน', `รับงานจาก “${item.client_name}” และเปิดโครงการอัตโนมัติ? โครงการจะรอเริ่มที่ 0% วันเริ่มตั้งต้นเป็นวันที่เปิดโครงการ มูลค่าเริ่มต้น 0 รอระบุ และยังไม่กำหนดวันส่งงาน`, 'ยืนยันรับงานและเปิดโครงการ')) return;
         control.disabled = true;
         control.textContent = 'กำลังรับงาน…';
         try {
@@ -535,7 +552,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function deleteAttachment(project, attachment) {
-        if (!confirm(`ยืนยันการลบไฟล์ “${attachment.original_name}”?`)) return;
+        if (!await askConfirmation('ยืนยันการลบไฟล์', `ยืนยันการลบไฟล์ “${attachment.original_name}”?`, 'ยืนยันการลบไฟล์')) {
+            await manageProject(project);
+            return;
+        }
         try {
             await api(`/api/admin/projects/${project.id}/attachments/${attachment.id}`, { method: 'DELETE' });
             flash('ลบไฟล์เรียบร้อย');

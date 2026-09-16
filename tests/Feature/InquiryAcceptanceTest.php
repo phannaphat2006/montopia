@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Services\ProjectActivityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
@@ -27,7 +28,7 @@ class InquiryAcceptanceTest extends TestCase
         $this->assertSame('planned', $project->status);
         $this->assertSame(0, $project->progress_percent);
         $this->assertSame('0.00', $project->total_budget);
-        $this->assertSame(today()->toDateString(), $project->start_date->toDateString());
+        $this->assertSame(now(config('monstopia.business_timezone'))->toDateString(), $project->start_date->toDateString());
         $this->assertNull($project->end_date);
         $this->assertDatabaseHas('inquiries', ['id' => $inquiry->id, 'status' => 'accepted']);
         $this->assertDatabaseHas('project_updates', ['project_id' => $project->id, 'user_id' => $staff->id, 'visible_to_client' => false]);
@@ -121,6 +122,20 @@ class InquiryAcceptanceTest extends TestCase
         $this->actingAs($client)->postJson($this->replyUrl($inquiry), $this->acceptance())->assertForbidden();
         $this->assertDatabaseCount('projects', 0);
         $this->assertDatabaseHas('inquiries', ['id' => $inquiry->id, 'status' => 'pending']);
+    }
+
+    public function test_acceptance_uses_the_thai_business_date_after_utc_midnight_difference(): void
+    {
+        Mail::fake();
+        $this->travelTo(Carbon::parse('2026-09-16 20:00:00', 'UTC'));
+        try {
+            $staff = User::factory()->create(['role' => 'staff']);
+            $inquiry = $this->inquiry();
+            $response = $this->actingAs($staff)->postJson($this->replyUrl($inquiry), $this->acceptance())->assertCreated();
+            $this->assertSame('2026-09-17', Project::findOrFail($response->json('project_id'))->start_date->toDateString());
+        } finally {
+            $this->travelBack();
+        }
     }
 
     private function inquiry(string $email = 'owner@example.com'): Inquiry
