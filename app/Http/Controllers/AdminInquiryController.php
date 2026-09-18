@@ -14,9 +14,12 @@ use Throwable;
 
 class AdminInquiryController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return response()->json(['data' => Inquiry::with(['replies.user:id,name', 'project:id,inquiry_id,project_name'])->latest()->paginate(20)]);
+        $request->validate(['page' => ['sometimes', 'integer', 'min:1']]);
+
+        return response()->json(['data' => Inquiry::with(['replies.user:id,name', 'project:id,inquiry_id,project_name'])
+            ->latest()->orderByDesc('id')->paginate(20)]);
     }
 
     public function reply(Request $request, Inquiry $inquiry, AcceptedInquiryProjectService $projects): JsonResponse

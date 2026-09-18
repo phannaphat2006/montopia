@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let csrf = '';
     let user = null;
     let active = 'overview';
+    let inquiryPage = 1;
 
     const projectStatuses = [
         ['planned', 'รอเริ่ม'],
@@ -59,7 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function token() {
         if (csrf) return csrf;
         const response = await fetch('/api/csrf', { credentials: 'same-origin', headers: { Accept: 'application/json' } });
-        csrf = (await response.json()).token;
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok || !body.token) throw new Error('ไม่สามารถยืนยันคำขอได้ กรุณารีเฟรชหน้าแล้วลองใหม่');
+        csrf = body.token;
         return csrf;
     }
 
@@ -74,6 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         const response = await fetch(url, { ...options, headers, credentials: 'same-origin' });
         if (response.status === 204) return null;
+        if (response.status === 419) {
+            csrf = '';
+            throw new Error('การยืนยันคำขอหมดอายุ กรุณาลองดำเนินการอีกครั้ง หากยังไม่ได้ให้รีเฟรชหน้าและเข้าสู่ระบบใหม่');
+        }
         const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(Object.values(body.errors || {})[0]?.[0] || body.message || 'ดำเนินการไม่สำเร็จ');
         return body;
@@ -175,6 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
             error.textContent = '';
             try {
                 user = (await api('/api/auth/login', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(form))) })).user;
+                // Laravel rotates the CSRF token when regenerating the authenticated session.
+                csrf = '';
                 active = user.role === 'client' ? 'projects' : 'overview';
                 user.must_change_password ? passwordGate() : renderDashboard();
             } catch (problem) {
@@ -210,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await api('/api/account/password', { method: 'PUT', body: JSON.stringify(Object.fromEntries(new FormData(form))) });
                 user.must_change_password = false;
+                csrf = '';
                 flash('ตั้งรหัสผ่านใหม่เรียบร้อย');
                 renderDashboard();
             } catch (problem) {
@@ -236,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await api('/api/account/password', { method: 'PUT', body: JSON.stringify(Object.fromEntries(new FormData(form))) });
                 dialog.close();
+                csrf = '';
                 flash('เปลี่ยนรหัสผ่านเรียบร้อย');
             } catch (problem) {
                 error.textContent = problem.message;
@@ -247,7 +258,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function logout() {
-        try { await api('/api/auth/logout', { method: 'POST' }); } finally { user = null; csrf = ''; login(); }
+        try { await api('/api/auth/logout', { method: 'POST' }); } finally {
+            user = null;
+            csrf = '';
+            inquiryPage = 1;
+            if (dialog.open) dialog.close();
+            dialog.replaceChildren();
+            notice.hidden = true;
+            notice.textContent = '';
+            login();
+        }
     }
 
     const adminTabs = [
@@ -392,8 +412,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function inquiriesView() {
-        const [inquiryResponse, clientResponse] = await Promise.all([api('/api/admin/inquiries'), api('/api/admin/clients')]);
-        const inquiries = inquiryResponse.data.data;
+        let [inquiryResponse, clientResponse] = await Promise.all([api(`/api/admin/inquiries?page=${inquiryPage}`), api('/api/admin/clients')]);
+        if (inquiryResponse.data.current_page > inquiryResponse.data.last_page) {
+            inquiryPage = inquiryResponse.data.last_page;
+            inquiryResponse = await api(`/api/admin/inquiries?page=${inquiryPage}`);
+        }
+        const page = inquiryResponse.data;
+        inquiryPage = page.current_page;
+        const inquiries = page.data;
         const clients = clientResponse.data;
         const items = inquiries.map(item => {
             const client = clients.find(candidate => candidate.email.toLowerCase() === item.client_email.toLowerCase());
@@ -407,7 +433,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const replyHistory = item.replies.length ? `\n\nตอบกลับแล้ว ${item.replies.length} ครั้ง · ล่าสุดโดย ${item.replies.at(-1)?.user?.name || 'ทีมงาน'}` : '';
             return row(`#${String(item.id).padStart(6, '0')} · ${item.client_name}`, `${item.client_email} · ${item.client_phone}\nงบประมาณ: ${item.budget_range}\n\n${item.project_scope}${replyHistory}`, badge(item.status), actions);
         });
-        return section('บรีฟและเส้นทางรับงาน', null, null, items, 'ยังไม่มีบรีฟจากลูกค้า');
+        const view = section('บรีฟและเส้นทางรับงาน', null, null, items, 'ยังไม่มีบรีฟจากลูกค้า');
+        const previous = button('หน้าก่อนหน้า', () => { inquiryPage--; renderDashboard(); }, 'small');
+        const next = button('หน้าถัดไป', () => { inquiryPage++; renderDashboard(); }, 'small');
+        previous.disabled = page.current_page <= 1;
+        next.disabled = page.current_page >= page.last_page;
+        view.append(el('nav', { class: 'inquiry-pagination', 'aria-label': 'แบ่งหน้าบรีฟลูกค้า' },
+            el('p', { role: 'status' }, `แสดง ${page.from || 0}–${page.to || 0} จาก ${page.total} รายการ · หน้า ${page.current_page}/${page.last_page}`),
+            el('div', { class: 'actions' }, previous, next)));
+        return view;
     }
 
     function replyForm(item) {
@@ -501,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const detail = (await api(`/api/admin/projects/${project.id}`)).data;
             const milestoneList = detail.milestones.length ? el('ol', { class: 'timeline' }, detail.milestones.map(item => milestoneItem(detail, item, true))) : el('p', { class: 'empty' }, 'ยังไม่มี Milestone');
             const files = detail.attachments.length ? el('ul', { class: 'file-list' }, detail.attachments.map(item => fileItem(detail, item, true))) : el('p', { class: 'empty' }, 'ยังไม่มีไฟล์ในโครงการ');
-            const updates = detail.updates.length ? el('ol', { class: 'update-list' }, detail.updates.map(updateItem)) : el('p', { class: 'empty' }, 'ยังไม่มีประวัติการอัปเดต');
+            const updates = detail.updates.length ? el('ol', { class: 'update-list' }, detail.updates.map(item => teamUpdateItem(detail, item))) : el('p', { class: 'empty' }, 'ยังไม่มีประวัติการอัปเดต');
             showDialog(
                 el('header', {}, el('div', {}, el('p', { class: 'eyebrow' }, `PROJECT #${String(detail.id).padStart(4, '0')}`), el('h2', {}, detail.project_name)), button('ปิด ×', () => { dialog.close(); renderDashboard(); }, 'small')),
                 el('div', { class: 'project-dialog-summary' }, el('div', {}, badge(detail.status), el('span', {}, `${detail.client_name} · ${detail.client?.email || '-'}`)), progressMeter(detail.progress_percent)),
@@ -518,7 +552,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function progressUpdateForm(project) {
-        openForm('บันทึกความคืบหน้า', [['title', 'หัวข้ออัปเดต'], ['body', 'รายละเอียดที่ลูกค้าควรรู้', 'textarea', null, false], ['progress_percent', 'ความคืบหน้า 0–100 (เว้นว่างถ้าไม่เปลี่ยน)', 'number', null, false], ['status', 'สถานะโครงการ', 'text', [['', 'ไม่เปลี่ยนสถานะ'], ...projectStatuses.filter(([value]) => value !== 'archived')], false], ['visible_to_client', 'การมองเห็น', 'text', [['1', 'ลูกค้าเห็นและได้รับอีเมล'], ['0', 'บันทึกภายในทีม']]]], data => api(`/api/admin/projects/${project.id}/updates`, { method: 'POST', body: JSON.stringify({ ...data, progress_percent: data.progress_percent === '' ? null : Number(data.progress_percent), status: data.status || null, visible_to_client: data.visible_to_client === '1' }) }), { progress_percent: project.progress_percent, status: '', visible_to_client: true }, () => manageProject(project));
+        openForm('บันทึกความคืบหน้า', [['title', 'หัวข้ออัปเดต'], ['body', 'รายละเอียดที่ลูกค้าควรรู้', 'textarea', null, false], ['progress_percent', 'ความคืบหน้า 0–100 (เว้นว่างถ้าไม่เปลี่ยน)', 'number', null, false], ['status', 'สถานะโครงการ', 'text', [['', 'ไม่เปลี่ยนสถานะ'], ...projectStatuses.filter(([value]) => value !== 'archived')], false], ['visible_to_client', 'การมองเห็น', 'text', [['1', 'ลูกค้าเห็นและได้รับอีเมล'], ['0', 'บันทึกภายในทีม']]]], data => api(`/api/admin/projects/${project.id}/updates`, { method: 'POST', body: JSON.stringify({ ...data, progress_percent: data.progress_percent === '' ? null : Number(data.progress_percent), status: data.status || null, visible_to_client: data.visible_to_client === '1' }) }), { progress_percent: project.progress_percent, status: '', visible_to_client: true }, async result => {
+            await manageProject(project);
+            if (result.data.email_status === 'failed') flash('บันทึกความคืบหน้าแล้ว แต่ส่งอีเมลไม่สำเร็จ ดูสถานะและลองส่งใหม่ในประวัติการอัปเดต', true);
+            if (result.data.email_status === 'simulated') flash('บันทึกความคืบหน้าแล้ว อีเมลอยู่ในโหมดทดสอบ ยังไม่ได้ส่งออกจริง');
+        });
+    }
+
+    function teamUpdateItem(project, item) {
+        const entry = updateItem(item);
+        const labels = { unknown: 'ยังยืนยันผลการส่งไม่ได้ (ข้อมูลเดิมหรือบริการส่งหลายช่องทาง)', pending: 'รอส่งอีเมล', sending: 'กำลังส่ง — หากค้างให้ตรวจผู้รับก่อน ไม่กดส่งซ้ำ', sent: 'บริการอีเมลรับข้อความแล้ว (ตรวจผู้รับเพื่อยืนยันว่าถึงจริง)', simulated: 'โหมดทดสอบ: ไม่ได้ส่งอีเมลออกจริง', failed: 'ส่งอีเมลไม่สำเร็จ', skipped: 'ไม่ได้ส่งอีเมลรายการนี้' };
+        const delivery = el('div', { class: `email-delivery ${item.email_status || 'unknown'}` },
+            el('p', {}, `อีเมล: ${labels[item.email_status] || labels.unknown} · ลองส่ง ${item.email_attempts || 0}/3 ครั้ง`),
+            item.email_error ? el('p', {}, item.email_error) : null);
+        if (item.email_can_retry && project.client && project.status !== 'archived') delivery.append(button('ลองส่งอีเมลใหม่', async event => {
+            const control = event.currentTarget;
+            if (!await askConfirmation('ยืนยันส่งอีเมล', 'ส่งแจ้งเตือนรายการนี้ไปยังอีเมล Client ที่ผูกกับโครงการ? ตรวจผู้รับและการตั้งค่า SMTP ก่อนส่ง', 'ยืนยันส่ง')) {
+                await manageProject(project);
+                return;
+            }
+            control.disabled = true;
+            try {
+                const result = await api(`/api/admin/projects/${project.id}/updates/${item.id}/retry-email`, { method: 'POST' });
+                await manageProject(project);
+                flash(result.message, result.data.email_status === 'failed');
+            } catch (problem) {
+                await manageProject(project);
+                flash(problem.message, true);
+            }
+        }, 'small'));
+        entry.append(delivery);
+        return entry;
     }
 
     function milestoneForm(project, item = null) {

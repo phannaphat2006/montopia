@@ -30,6 +30,7 @@ class AdminDashboardController extends Controller
                 'company_profiles' => CompanyProfile::query()->count(),
                 'recent_inquiries' => Inquiry::query()
                     ->latest()
+                    ->orderByDesc('id')
                     ->limit(5)
                     ->get(['id', 'client_name', 'budget_range', 'status', 'created_at']),
                 'project_statuses' => Project::query()

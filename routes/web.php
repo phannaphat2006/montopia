@@ -60,6 +60,7 @@ Route::prefix('api')->group(function () {
         Route::put('/projects/{project}', [AdminProjectController::class, 'update']);
         Route::delete('/projects/{project}', [AdminProjectController::class, 'destroy']);
         Route::post('/projects/{project}/updates', [AdminProjectUpdateController::class, 'store']);
+        Route::post('/projects/{project}/updates/{update}/retry-email', [AdminProjectUpdateController::class, 'retryEmail'])->middleware('throttle:6,1');
         Route::get('/projects/{project}/milestones', [AdminMilestoneController::class, 'index']);
         Route::post('/projects/{project}/milestones', [AdminMilestoneController::class, 'store']);
         Route::put('/projects/{project}/milestones/{milestone}', [AdminMilestoneController::class, 'update']);

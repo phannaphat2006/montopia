@@ -91,11 +91,15 @@ class AdminProjectController extends Controller
 
     private function details(Project $project): Project
     {
-        return $project->load([
+        $project->load([
             'client:id,name,email',
             'milestones',
             'attachments.user:id,name',
             'updates.user:id,name',
         ])->loadCount(['milestones', 'attachments'])->makeVisible('total_budget');
+
+        $project->updates->each->exposeEmailDelivery();
+
+        return $project;
     }
 }

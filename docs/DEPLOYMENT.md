@@ -62,14 +62,14 @@ php artisan monstopia:create-admin admin@example.com --name="Administrator" --ge
 * * * * * cd /path/to/monstopia && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-ระบบสำรองฐานข้อมูลเวลา 02:00 ตามเขตเวลา `MONSTOPIA_BUSINESS_TIMEZONE` (ค่าเริ่มต้น Asia/Bangkok) ทุกวัน เก็บไฟล์ที่ `storage/app/private/backups` และลบไฟล์เก่าตาม `BACKUP_RETENTION_DAYS` ควรคัดลอก Backup เข้าพื้นที่อีกเครื่องหรือ Object Storage ที่เข้ารหัสด้วย เพราะ Backup ที่อยู่ Server เดียวกันไม่ช่วยเมื่อดิสก์เสีย
+ระบบเรียก `monstopia:backup-all` เวลา 02:00 ตามเขตเวลา `MONSTOPIA_BUSINESS_TIMEZONE` (ค่าเริ่มต้น Asia/Bangkok) ทุกวัน เก็บชุด SQL + ไฟล์แนบ + manifest ที่ `storage/app/private/backups` และคัดลอกเพิ่มไป `BACKUP_EXTERNAL_DIRECTORY` หากตั้งค่าไว้ ไม่ลบชุดเก่าอัตโนมัติ ควรเก็บอีกชุดบนคนละอุปกรณ์หรือพื้นที่นอกสถานที่ที่เข้ารหัส เพราะ Backup บนเครื่องเดียวกันไม่ช่วยเมื่อเครื่องเสียทั้งหมด
 
-ไฟล์ SQL สำรองรายการและข้อมูลในฐานข้อมูล ไม่รวมเนื้อไฟล์แนบใน Private Storage จึงต้องสำรอง Private Storage แยกด้วย การตั้ง Scheduler อย่างเดียวไม่ทำให้เกิด Backup หากยังไม่มี Cron/ตัวเรียก Scheduler ทำงานจริง
+คำสั่ง SQL-only เดิมไม่รวมไฟล์แนบ ส่วน `monstopia:backup-all` รวมไฟล์ที่อ้างอิงในฐานข้อมูลด้วย การตั้ง Scheduler อย่างเดียวไม่ทำให้เกิด Backup หากยังไม่มี Cron/ตัวเรียก Scheduler ทำงานจริง ใน Windows ใช้ `Install-MONSTOPIA-BackupTask.ps1` ได้ อ่านข้อจำกัดและวิธีกู้คืนใน `docs/BACKUP-GUIDE.md`
 
 ทดสอบก่อนเปิดระบบจริง:
 
 ```bash
-php artisan monstopia:backup-database
+php artisan monstopia:backup-all
 ```
 
 การ Restore ควรทำในฐานข้อมูลทดสอบก่อนเสมอ แตกไฟล์ `.sql.gz` แล้ว Import ด้วย MySQL Client ที่เวอร์ชันเข้ากับ Server ห้าม Restore ทับ Production โดยไม่สำรองชุดปัจจุบันก่อน
@@ -79,7 +79,7 @@ php artisan monstopia:backup-database
 - SMTP ใช้ส่งคำตอบบรีฟและแจ้งความคืบหน้าให้ลูกค้า
 - LINE Messaging API ใช้แจ้งทีมงานเมื่อมีบรีฟใหม่ ไม่ใช้ LINE Notify เพราะบริการเดิมยุติแล้ว
 - ทดลองด้วยอีเมลทดสอบก่อน และตรวจ Spam/DNS ของโดเมน เช่น SPF, DKIM และ DMARC
-- ถ้าส่งอีเมลล้มเหลว ข้อมูลหลักยังบันทึกในฐานข้อมูลและ Log จะบอกรายละเอียดสำหรับผู้ดูแล
+- ถ้าส่งอีเมลความคืบหน้าล้มเหลว ข้อมูลหลักยังอยู่ ทีมงานเห็นสถานะในประวัติโครงการและลองใหม่ได้ไม่เกิน 3 ครั้ง ระบบไม่ส่งซ้ำขณะกำลังส่งหรือส่งไปแล้ว `sent` หมายถึงบริการรับข้อความ ไม่ใช่การยืนยันเข้ากล่องจดหมาย ส่วน `simulated` คือ array/log ที่ยังไม่ส่งจริง
 
 ## 6. Security Checklist ก่อนเปิดสาธารณะ
 

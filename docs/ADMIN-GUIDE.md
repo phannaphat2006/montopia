@@ -84,10 +84,10 @@ D:\motopia\.runtime\php\php.exe artisan monstopia:create-admin admin@example.com
 ทดสอบสำรองด้วยคำสั่ง:
 
 ```powershell
-D:\motopia\.runtime\php\php.exe artisan monstopia:backup-database
+D:\motopia\.runtime\php\php.exe artisan monstopia:backup-all
 ```
 
-ไฟล์ `.sql.gz` อยู่ใน `storage/app/private/backups` และไม่ถูก Commit ขึ้น Git งาน Production ต้องตั้ง Cron ให้ `php artisan schedule:run` ทำงานทุกนาที เพื่อให้ Laravel เรียก Backup รายวันเวลา 02:00 ตามเวลาไทย ไม่ใช่เพียงเปิดหน้าเว็บแล้ว Backup จะทำงานเอง ต้องสำรองเนื้อไฟล์งานใน Private Storage แยกจาก SQL ด้วย
+ชุดสำรอง SQL + ไฟล์แนบ + manifest อยู่ใน `storage/app/private/backups` และไม่ถูก Commit ขึ้น Git งาน Production ต้องตั้ง Cron ให้ `php artisan schedule:run` ทำงานทุกนาที เพื่อเรียก Backup เวลา 02:00 ตามเวลาไทย ใน Windows มีตัวติดตั้ง Scheduled Task สำหรับเครื่องนี้ การเปิดหน้าเว็บอย่างเดียวไม่ทำให้ Backup ทำงาน ชุดเก่าไม่ถูกลบอัตโนมัติ และควรมีสำรองแยกอุปกรณ์ด้วย ดู `docs/BACKUP-GUIDE.md`
 
 ## 10. ก่อนใช้งานจริงบนอินเทอร์เน็ต
 
