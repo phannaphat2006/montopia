@@ -611,7 +611,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function usersView() {
         const users = (await api('/api/admin/users')).data;
-        return section('ผู้ใช้งานและสิทธิ์', 'สร้างบัญชี', () => userForm(), users.map(item => row(item.name, `${item.email}\n${item.phone || 'ไม่ระบุเบอร์โทร'}${item.last_login_at ? `\nเข้าสู่ระบบล่าสุด ${dateTime(item.last_login_at)}` : '\nยังไม่เคยเข้าสู่ระบบ'}`, el('span', { class: 'page-meta' }, badge(item.role), item.must_change_password ? badge('รอเปลี่ยนรหัสผ่าน', 'submitted') : null), [button('แก้ไข', () => userForm(item), 'small'), ...(item.id !== user.id ? [button('ลบ', () => removeRecord(`/api/admin/users/${item.id}`, item.name), 'small danger')] : [])])), 'ยังไม่มีผู้ใช้งาน');
+        return section('ผู้ใช้งานและสิทธิ์', 'สร้างบัญชี', () => userForm(), users.map(item => row(item.name, `${item.email}\n${item.phone || 'ไม่ระบุเบอร์โทร'}${item.last_login_at ? `\nเข้าสู่ระบบล่าสุด ${dateTime(item.last_login_at)}` : '\nยังไม่เคยเข้าสู่ระบบ'}`, el('span', { class: 'page-meta' }, badge(item.role), item.firebase_linked ? badge('Firebase พร้อมใช้งาน', 'approved') : badge('ยังไม่เชื่อม Firebase', 'draft'), item.must_change_password ? badge('รอเปลี่ยนรหัสผ่าน', 'submitted') : null), [button(item.firebase_linked ? 'แก้ไข' : 'เชื่อม Firebase', () => userForm(item), 'small'), ...(item.firebase_linked ? [button('ส่งลิงก์ตั้งรหัสผ่าน', () => sendAccountPasswordReset(item), 'small')] : []), ...(item.id !== user.id ? [button('ลบ', () => removeRecord(`/api/admin/users/${item.id}`, item.name), 'small danger')] : [])])), 'ยังไม่มีผู้ใช้งาน');
+    }
+
+    async function sendAccountPasswordReset(item) {
+        if (!await askConfirmation('ส่งลิงก์ตั้งรหัสผ่าน', `Firebase จะส่งอีเมลภาษาไทยไปที่ ${item.email} เพื่อให้ผู้รับกำหนดรหัสผ่านใหม่`, 'ยืนยันส่ง')) return;
+        try {
+            const result = await api(`/api/admin/users/${item.id}/password-reset`, { method: 'POST' });
+            flash(result.message);
+        } catch (problem) {
+            flash(problem.message, true);
+        }
     }
 
     function userForm(item = null, preset = {}) {

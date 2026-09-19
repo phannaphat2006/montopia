@@ -75,6 +75,7 @@ Route::prefix('api')->group(function () {
         Route::get('/users', [AdminUserController::class, 'index']);
         Route::post('/users', [AdminUserController::class, 'store']);
         Route::put('/users/{user}', [AdminUserController::class, 'update']);
+        Route::post('/users/{user}/password-reset', [AdminUserController::class, 'sendPasswordReset'])->middleware('throttle:6,1');
         Route::delete('/users/{user}', [AdminUserController::class, 'destroy']);
     });
     Route::middleware(['auth', 'password.changed', 'role:client'])->get('/client/projects', [ClientProjectController::class, 'index']);

@@ -72,6 +72,11 @@ class FirebaseIdentityService
         $this->auth()->deleteUser($uid);
     }
 
+    public function sendPasswordResetLink(string $email): void
+    {
+        $this->auth()->sendPasswordResetLink($email, null, 'th');
+    }
+
     private function auth(): Auth
     {
         if (! $this->enabled()) {

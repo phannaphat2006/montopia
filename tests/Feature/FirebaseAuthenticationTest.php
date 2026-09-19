@@ -122,4 +122,26 @@ class FirebaseAuthenticationTest extends TestCase
         $this->deleteJson('/api/admin/users/'.$user->id)->assertNoContent();
         $this->assertDatabaseMissing('users', ['id' => $user->id]);
     }
+
+    public function test_admin_can_see_link_status_and_send_thai_password_reset_link(): void
+    {
+        config(['firebase.enabled' => true]);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $linked = User::factory()->create(['role' => 'client', 'firebase_uid' => 'linked-uid', 'email' => 'linked@example.com']);
+        $unlinked = User::factory()->create(['role' => 'client', 'firebase_uid' => null, 'email' => 'unlinked@example.com']);
+        $firebase = Mockery::mock(FirebaseIdentityService::class);
+        $firebase->shouldReceive('enabled')->twice()->andReturnTrue();
+        $firebase->shouldReceive('sendPasswordResetLink')->once()->with('linked@example.com');
+        $this->app->instance(FirebaseIdentityService::class, $firebase);
+
+        $users = $this->actingAs($admin)->getJson('/api/admin/users')->assertOk()->json('data');
+        $byId = collect($users)->keyBy('id');
+        $this->assertTrue($byId[$linked->id]['firebase_linked']);
+        $this->assertFalse($byId[$unlinked->id]['firebase_linked']);
+        $this->assertArrayNotHasKey('firebase_uid', $byId[$linked->id]);
+
+        $this->postJson('/api/admin/users/'.$linked->id.'/password-reset')->assertOk();
+        $this->postJson('/api/admin/users/'.$unlinked->id.'/password-reset')->assertUnprocessable();
+        $this->actingAs($unlinked)->postJson('/api/admin/users/'.$linked->id.'/password-reset')->assertForbidden();
+    }
 }

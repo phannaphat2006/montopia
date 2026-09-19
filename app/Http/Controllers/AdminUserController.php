@@ -17,7 +17,13 @@ class AdminUserController extends Controller
 {
     public function index(): JsonResponse
     {
-        return response()->json(['data' => User::query()->select('id', 'name', 'email', 'role', 'phone', 'must_change_password', 'last_login_at', 'created_at')->latest()->get()]);
+        $users = User::query()
+            ->select('id', 'name', 'email', 'role', 'phone', 'must_change_password', 'last_login_at', 'created_at', 'firebase_uid')
+            ->latest()
+            ->get()
+            ->map(fn (User $user) => $this->userData($user));
+
+        return response()->json(['data' => $users]);
     }
 
     public function store(Request $request, FirebaseIdentityService $firebase): JsonResponse
@@ -25,7 +31,7 @@ class AdminUserController extends Controller
         $data = $this->validated($request);
         $data['must_change_password'] = true;
         if (! $firebase->enabled()) {
-            return response()->json(['data' => User::create($data)->only('id', 'name', 'email', 'role', 'phone', 'must_change_password')], 201);
+            return response()->json(['data' => $this->userData(User::create($data))], 201);
         }
 
         try {
@@ -47,7 +53,7 @@ class AdminUserController extends Controller
             throw $error;
         }
 
-        return response()->json(['data' => $user->only('id', 'name', 'email', 'role', 'phone', 'must_change_password')], 201);
+        return response()->json(['data' => $this->userData($user)], 201);
     }
 
     public function update(Request $request, User $user, FirebaseIdentityService $firebase): JsonResponse
@@ -89,7 +95,26 @@ class AdminUserController extends Controller
 
         $user->update($data);
 
-        return response()->json(['data' => $user->only('id', 'name', 'email', 'role', 'phone')]);
+        return response()->json(['data' => $this->userData($user)]);
+    }
+
+    public function sendPasswordReset(User $user, FirebaseIdentityService $firebase): JsonResponse
+    {
+        abort_unless($firebase->enabled(), 422, 'ระบบ Firebase ยังไม่ได้เปิดใช้งาน');
+        abort_unless($user->firebase_uid, 422, 'บัญชีนี้ยังไม่เชื่อม Firebase กรุณาแก้ไขบัญชีและกำหนดรหัสผ่านชั่วคราวก่อน');
+
+        try {
+            $firebase->sendPasswordResetLink($user->email);
+        } catch (Throwable $error) {
+            Log::warning('Firebase password reset link failed', [
+                'user_id' => $user->id,
+                'exception' => $error::class,
+            ]);
+
+            abort(422, 'ส่งลิงก์ตั้งรหัสผ่านไม่สำเร็จ กรุณาตรวจอีเมลและการเชื่อมต่อ Firebase');
+        }
+
+        return response()->json(['message' => 'Firebase รับคำขอส่งลิงก์ตั้งรหัสผ่านภาษาไทยแล้ว กรุณาให้ผู้รับตรวจ Inbox และ Spam']);
     }
 
     public function destroy(Request $request, User $user, FirebaseIdentityService $firebase): JsonResponse
@@ -119,5 +144,13 @@ class AdminUserController extends Controller
             'role' => ['required', 'in:admin,staff,client'],
             'phone' => ['nullable', 'string', 'max:20'],
         ]);
+    }
+
+    private function userData(User $user): array
+    {
+        return [
+            ...$user->only('id', 'name', 'email', 'role', 'phone', 'must_change_password', 'last_login_at', 'created_at'),
+            'firebase_linked' => filled($user->firebase_uid),
+        ];
     }
 }
