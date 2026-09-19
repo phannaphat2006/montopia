@@ -35,9 +35,12 @@ Route::prefix('api')->group(function () {
     Route::get('/articles/{slug}', [ContentController::class, 'article']);
     Route::post('/inquiries', [InquiryController::class, 'store'])->middleware('throttle:5,1');
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
+    Route::get('/auth/firebase-config', [AuthController::class, 'firebaseConfig']);
+    Route::post('/auth/firebase', [AuthController::class, 'firebaseLogin'])->middleware('throttle:login');
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth');
     Route::put('/account/password', [AccountController::class, 'changePassword'])->middleware(['auth', 'throttle:6,1']);
+    Route::post('/account/firebase-password-complete', [AccountController::class, 'firebasePasswordComplete'])->middleware(['auth', 'throttle:6,1']);
     Route::get('/project-files/{attachment}/download', [ProjectFileController::class, 'download'])
         ->middleware(['auth', 'password.changed', 'throttle:30,1'])
         ->name('project-files.download');

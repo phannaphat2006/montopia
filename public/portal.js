@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let user = null;
     let active = 'overview';
     let inquiryPage = 1;
+    let firebase = null;
 
     const projectStatuses = [
         ['planned', 'รอเริ่ม'],
@@ -84,6 +85,92 @@ document.addEventListener('DOMContentLoaded', () => {
         const body = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(Object.values(body.errors || {})[0]?.[0] || body.message || 'ดำเนินการไม่สำเร็จ');
         return body;
+    }
+
+    async function firebaseConfiguration() {
+        if (firebase) return firebase;
+        firebase = await api('/api/auth/firebase-config');
+        if (firebase.enabled && (!firebase.api_key || !firebase.project_id)) {
+            throw new Error('Firebase ยังตั้งค่าไม่ครบ กรุณาติดต่อผู้ดูแลระบบ');
+        }
+        return firebase;
+    }
+
+    async function firebaseRequest(action, payload) {
+        const configuration = await firebaseConfiguration();
+        if (!configuration.enabled) throw new Error('Firebase Login ยังไม่ได้เปิดใช้งาน');
+        const endpoint = { login: 'accounts:signInWithPassword', update: 'accounts:update', reset: 'accounts:sendOobCode' }[action];
+        if (!endpoint) throw new Error('คำขอ Firebase ไม่ถูกต้อง');
+        let response;
+        try {
+            response = await fetch(`https://identitytoolkit.googleapis.com/v1/${endpoint}?key=${encodeURIComponent(configuration.api_key)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+        } catch {
+            throw new Error('เชื่อมต่อ Firebase ไม่ได้ กรุณาตรวจอินเทอร์เน็ตแล้วลองใหม่');
+        }
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            const code = body.error?.message || '';
+            // Password-reset requests deliberately look successful even when the
+            // address is unknown, so the page cannot be used to list our users.
+            if (action === 'reset' && code === 'EMAIL_NOT_FOUND') return {};
+            if (['INVALID_LOGIN_CREDENTIALS', 'EMAIL_NOT_FOUND', 'INVALID_PASSWORD', 'USER_DISABLED'].includes(code)) throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือบัญชีถูกระงับ');
+            if (code.startsWith('WEAK_PASSWORD')) throw new Error('รหัสผ่านใหม่ยังไม่ผ่านนโยบายของ Firebase');
+            if (code === 'TOO_MANY_ATTEMPTS_TRY_LATER') throw new Error('ลองเข้าสู่ระบบหลายครั้งเกินไป กรุณารอสักครู่');
+            throw new Error('Firebase ดำเนินการไม่สำเร็จ กรุณาลองใหม่');
+        }
+        return body;
+    }
+
+    async function authenticate(email, password) {
+        const configuration = await firebaseConfiguration();
+        if (!configuration.enabled) {
+            return (await api('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) })).user;
+        }
+        const identity = await firebaseRequest('login', { email, password, returnSecureToken: true });
+        return (await api('/api/auth/firebase', { method: 'POST', body: JSON.stringify({ id_token: identity.idToken }) })).user;
+    }
+
+    function validateNewPassword(data) {
+        if (data.password !== data.password_confirmation) throw new Error('รหัสผ่านใหม่และการยืนยันไม่ตรงกัน');
+        if (data.password.length < 12 || !/[a-z]/.test(data.password) || !/[A-Z]/.test(data.password) || !/[0-9]/.test(data.password)) {
+            throw new Error('รหัสผ่านต้องยาวอย่างน้อย 12 ตัว และมีตัวพิมพ์ใหญ่ ตัวพิมพ์เล็ก และตัวเลข');
+        }
+    }
+
+    async function changeAccountPassword(data) {
+        const configuration = await firebaseConfiguration();
+        if (!configuration.enabled) return api('/api/account/password', { method: 'PUT', body: JSON.stringify(data) });
+        validateNewPassword(data);
+        const identity = await firebaseRequest('login', { email: user.email, password: data.current_password, returnSecureToken: true });
+        await firebaseRequest('update', { idToken: identity.idToken, password: data.password, returnSecureToken: true });
+        return api('/api/account/firebase-password-complete', { method: 'POST' });
+    }
+
+    function resetPasswordDialog(email = '') {
+        const form = el('form', {}, field('email', 'อีเมลบัญชี Firebase', 'email'));
+        const error = el('p', { class: 'form-error', role: 'alert' });
+        const save = el('button', { type: 'submit', class: 'primary' }, 'ส่งลิงก์ตั้งรหัสผ่านใหม่');
+        form.append(error, el('div', { class: 'actions' }, button('ยกเลิก', () => dialog.close()), save));
+        form.addEventListener('submit', async event => {
+            event.preventDefault();
+            save.disabled = true;
+            error.textContent = '';
+            try {
+                await firebaseRequest('reset', { requestType: 'PASSWORD_RESET', email: new FormData(form).get('email') });
+                dialog.close();
+                flash('หากอีเมลนี้มีบัญชี Firebase ระบบจะส่งลิงก์ตั้งรหัสผ่านใหม่ กรุณาตรวจ Inbox และ Spam');
+            } catch (problem) {
+                error.textContent = problem.message;
+            } finally {
+                save.disabled = false;
+            }
+        });
+        showDialog(el('header', {}, el('h2', {}, 'ลืมรหัสผ่าน'), button('ปิด ×', () => dialog.close(), 'small')), form);
+        fillForm({ email });
     }
 
     function field(name, label, type = 'text', options = null, required = true) {
@@ -175,13 +262,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const error = el('p', { class: 'form-error', role: 'alert' });
         const submit = el('button', { class: 'primary has-next-icon', type: 'submit' }, 'เข้าสู่ระบบ');
         form.append(submit, error);
+        if (firebase?.enabled) form.append(button('ลืมรหัสผ่าน', () => resetPasswordDialog(form.elements.email.value), 'small'));
         form.addEventListener('submit', async event => {
             event.preventDefault();
             submit.disabled = true;
             submit.textContent = 'กำลังตรวจสอบ…';
             error.textContent = '';
             try {
-                user = (await api('/api/auth/login', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(form))) })).user;
+                const data = Object.fromEntries(new FormData(form));
+                user = await authenticate(data.email, data.password);
                 // Laravel rotates the CSRF token when regenerating the authenticated session.
                 csrf = '';
                 active = user.role === 'client' ? 'projects' : 'overview';
@@ -195,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         root.replaceChildren(el('div', { class: 'login-layout' },
             el('section', { class: 'login-intro' }, el('p', { class: 'eyebrow' }, 'MONSTOPIA INFORMATION SYSTEM'), el('h1', {}, 'จัดการงานตั้งแต่รับบรีฟ', el('br'), 'จนถึงส่งมอบโครงการ'), el('p', { class: 'muted' }, 'พื้นที่ทำงานสำหรับผู้ดูแล ทีมงาน และลูกค้า โดยทุกบัญชีเห็นข้อมูลตามสิทธิ์ของตนเอง')),
-            el('section', { class: 'panel login-card' }, el('p', { class: 'eyebrow' }, 'SECURE ACCESS'), el('h2', {}, 'เข้าสู่ระบบ'), el('p', { class: 'muted' }, 'ใช้บัญชีที่ผู้ดูแลระบบสร้างให้ ไม่มีระบบสมัครสมาชิกสาธารณะ'), form, el('p', { class: 'caption' }, 'ระบบจำกัดการลองรหัสผ่านผิดและตรวจสิทธิ์ทุก API จาก Laravel'))
+            el('section', { class: 'panel login-card' }, el('p', { class: 'eyebrow' }, 'SECURE ACCESS'), el('h2', {}, 'เข้าสู่ระบบ'), el('p', { class: 'muted' }, 'ใช้บัญชีที่ผู้ดูแลระบบสร้างให้ ไม่มีระบบสมัครสมาชิกสาธารณะ'), form, el('p', { class: 'caption' }, firebase?.enabled ? 'Firebase ตรวจอีเมลและรหัสผ่าน จากนั้น Laravel ตรวจ Token และสิทธิ์ใน MySQL' : 'ระบบจำกัดการลองรหัสผ่านผิดและตรวจสิทธิ์ทุก API จาก Laravel'))
         ));
     }
 
@@ -217,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
             save.disabled = true;
             error.textContent = '';
             try {
-                await api('/api/account/password', { method: 'PUT', body: JSON.stringify(Object.fromEntries(new FormData(form))) });
+                await changeAccountPassword(Object.fromEntries(new FormData(form)));
                 user.must_change_password = false;
                 csrf = '';
                 flash('ตั้งรหัสผ่านใหม่เรียบร้อย');
@@ -244,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
             save.disabled = true;
             error.textContent = '';
             try {
-                await api('/api/account/password', { method: 'PUT', body: JSON.stringify(Object.fromEntries(new FormData(form))) });
+                await changeAccountPassword(Object.fromEntries(new FormData(form)));
                 dialog.close();
                 csrf = '';
                 flash('เปลี่ยนรหัสผ่านเรียบร้อย');
@@ -681,6 +770,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     (async function boot() {
         try {
+            await firebaseConfiguration();
             user = (await api('/api/auth/me')).user;
             if (!user) {
                 login();
