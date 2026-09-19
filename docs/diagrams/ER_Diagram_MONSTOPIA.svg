@@ -23,19 +23,19 @@
 
   <path class="rel" d="M1000 955 L1060 955" marker-end="url(#arrow)"/>
   <text class="cardinality" x="1010" y="939">1</text><text class="cardinality" x="1040" y="939">N</text>
-  <path class="rel" d="M520 875 H545 V705 H1555 V945 H1480" marker-end="url(#arrow)"/>
-  <text class="note" x="720" y="695">staff/admin writes (user_id)</text>
-  <path class="relStrong" d="M1000 800 H1030 V660 H1685 V820 H1720" marker-end="url(#arrowRed)"/>
-  <text class="cardinality" x="1045" y="648">inquiries 0..1 project</text><text class="cardinality" x="1640" y="805">0..1</text>
-  <path class="relStrong" d="M520 1020 H540 V1175 H1685 V880 H1720" marker-end="url(#arrowRed)"/>
-  <text class="note" x="780" y="1160">client_user_id / updated_by</text>
+  <path class="rel" d="M520 890 C760 740 1060 770 1270 815" marker-end="url(#arrow)"/>
+  <text class="note" x="720" y="760">staff/admin writes</text>
+  <path class="relStrong" d="M1480 920 C1595 920 1610 920 1720 920" marker-end="url(#arrowRed)"/>
+  <text class="cardinality" x="1535" y="900">1</text><text class="cardinality" x="1670" y="900">0..1</text>
+  <path class="relStrong" d="M520 1000 C900 1130 1420 1100 1720 1020" marker-end="url(#arrowRed)"/>
+  <text class="note" x="965" y="1110">client_user_id / updated_by</text>
   <path class="relStrong" d="M1980 1110 C1920 1190 1650 1210 1500 1280" marker-end="url(#arrowRed)"/>
   <path class="relStrong" d="M2020 1110 L2020 1280" marker-end="url(#arrowRed)"/>
   <path class="relStrong" d="M2100 1110 C2200 1190 2440 1210 2520 1280" marker-end="url(#arrowRed)"/>
   <text class="cardinality" x="1945" y="1180">1:N</text><text class="cardinality" x="2040" y="1190">1:N</text><text class="cardinality" x="2285" y="1205">1:N</text>
-  <path class="rel" d="M430 1110 V1240 H1520 V1420 H1540" marker-end="url(#arrow)"/>
-  <path class="rel" d="M450 1110 V1205 H2150 V1420 H2180" marker-end="url(#arrow)"/>
-  <text class="note" x="1160" y="1265">updates.user_id</text><text class="note" x="1700" y="1230">attachments.user_id</text>
+  <path class="rel" d="M520 1050 C760 1470 950 1510 1260 1510" marker-end="url(#arrow)"/>
+  <path class="rel" d="M520 1085 C900 1690 1800 1700 2280 1540" marker-end="url(#arrow)"/>
+  <text class="note" x="690" y="1440">user_id</text><text class="note" x="1030" y="1715">user_id</text>
 
   <!-- content entities -->
   <g transform="translate(90 230)"><rect class="box" width="430" height="330" rx="18"/><rect class="head" width="430" height="62" rx="18"/><rect class="head" y="42" width="430" height="20"/><text class="headText" x="24" y="41">company_profiles</text><text class="key" x="24" y="96">PK</text><text class="field" x="82" y="96">id</text><text class="field" x="24" y="132">name, tagline</text><text class="field" x="24" y="168">description</text><text class="field" x="24" y="204">email, phone, address</text><text class="field" x="24" y="240">registration_number</text><text class="field" x="24" y="276">is_published</text><text class="note" x="24" y="312">created_at, updated_at</text></g>
